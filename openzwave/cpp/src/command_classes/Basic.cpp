@@ -206,7 +206,7 @@ bool Basic::HandleMsg
 
 	if( BasicCmd_Set == (BasicCmd)_data[0] )
 	{
-            sprintf(cmd, "../../robots/EmailAlertAlways.py %d %d", GetNodeId(), _data[1]);
+            sprintf(cmd, "/etc/raspwave/robots/EmailAlertAlways.py %d %d", GetNodeId(), _data[1]);
             system(cmd);
 	    Log::Write( LogLevel_Info, GetNodeId(), cmd);
             

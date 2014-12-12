@@ -5,6 +5,8 @@ VERSION=1.1-$DATE
 ETC_RASPWAVE=debian/etc/raspwave/
 USR_LOCAL_BIN=debian/usr/local/bin/
 
+rm -rf debian
+
 mkdir -p $ETC_RASPWAVE
 cp -aR ../conf/ $ETC_RASPWAVE
 cp -aR ../cronbots/ $ETC_RASPWAVE
