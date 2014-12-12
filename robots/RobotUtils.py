@@ -9,6 +9,12 @@ import sys
 import os
 import anydbm
 import subprocess
+import ConfigParser
+
+def getNodeName (id):
+    config = ConfigParser.ConfigParser()
+    config.read("../conf/nodes.conf")
+    return config.get(id, "NAME")
 
 def sendEmail (emailAddresses, subject, body):
     for emailAddress in emailAddresses:

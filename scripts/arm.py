@@ -2,6 +2,11 @@
 # @author rouble matta
 
 from strings import writeStringValue, readStringValue
+import cgi, cgitb
+cgitb.enable()
 
 writeStringValue("STATE", "ARMED")
-print "state: " + str(readStringValue("STATE"))
+print "STATE: " + str(readStringValue("STATE"))
+
+print "Content-type: text/html\n\n"
+print "<html><body>hello scritp</body></html>"
