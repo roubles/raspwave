@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+DATE=$(date +"%m%d%y%H%M%S")
+VERSION=1.1-$DATE
+ETC_RASPWAVE=debian/etc/raspwave/
+USR_LOCAL_BIN=debian/usr/local/bin/
+
+mkdir -p $ETC_RASPWAVE
+cp -aR ../conf/ $ETC_RASPWAVE
+cp -aR ../cronbots/ $ETC_RASPWAVE
+cp -aR ../db/ $ETC_RASPWAVE
+cp -aR ../robots/ $ETC_RASPWAVE
+cp -aR ../scripts/ $ETC_RASPWAVE
+cp -aR ../www/ $ETC_RASPWAVE
+
+mkdir -p $USR_LOCAL_BIN
+cp -a ../openzwave/MinOZW $USR_LOCAL_BIN
+
+mkdir -p debian/DEBIAN
+find ./debian -type d | xargs chmod 755
+sed -i "/Version:/cVersion: ${VERSION}" control
+cp control debian/DEBIAN
+
+dpkg-deb --build debian
+mv debian.deb raspwave_${VERSION}.deb

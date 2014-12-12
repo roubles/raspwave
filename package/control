@@ -1,0 +1,10 @@
+Package: raspwave
+Version: 1.1-121114235229
+Section: base
+Priority: optional
+Architecture: all
+Depends: 
+Maintainer: Rouble Matta <r.ouble@gmail.com>
+Description: Raspberry Pi Zwave Automation
+ This project brutally simplifies home automation
+ using Raspberry Pi and Zwave
