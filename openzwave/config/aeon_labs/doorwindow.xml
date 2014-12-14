@@ -31,7 +31,7 @@
 	</CommandClass>
 
 	<!-- Basic set as report -->
-	<CommandClass id="32" setasreport="true"/>
+	<CommandClass id="32" setasreport="false"/>
 
 	<!-- Association Groups -->
 	<CommandClass id="133">		

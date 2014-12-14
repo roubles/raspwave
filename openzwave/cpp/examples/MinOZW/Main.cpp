@@ -33,6 +33,7 @@
 #include <unistd.h>
 #include <stdlib.h>
 #include <pthread.h>
+#include <dirent.h>
 #include "Options.h"
 #include "Manager.h"
 #include "Driver.h"
@@ -65,6 +66,17 @@ static pthread_mutex_t g_criticalSection;
 static pthread_cond_t  initCond  = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t initMutex = PTHREAD_MUTEX_INITIALIZER;
 
+typedef struct {
+    uint8 nodeId;
+    uint8 event;
+    uint8 commandClassId;
+} NotificationData;
+
+typedef struct {
+    NotificationData notificationData;
+    char pathToRobot[200];
+} RobotCall;
+
 //-----------------------------------------------------------------------------
 // <GetNodeInfo>
 // Return the NodeInfo object associated with this notification
@@ -86,6 +98,89 @@ NodeInfo* GetNodeInfo
 	}
 
 	return NULL;
+}
+
+void* callRobot(void * p) {
+    RobotCall* rc = (RobotCall*) p;
+
+    char cmd[200] = {0};
+    sprintf(cmd, "%s %d %d %d", rc->pathToRobot, rc->notificationData.nodeId, rc->notificationData.event, rc->notificationData.commandClassId);
+    system(cmd);
+    Log::Write(LogLevel_Info, rc->notificationData.nodeId, cmd);
+
+    // Free up stuff
+    delete rc;
+    pthread_exit(NULL);
+}
+
+bool hasEnding (std::string const &fullString, std::string const &ending)
+{
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
+    }
+}
+
+void callRobotsAtPath (string path, NotificationData* nd) {
+    DIR *dir;
+    struct dirent *ent;
+    if ((dir = opendir (path.c_str())) != NULL) {
+        /* print all the files and directories within directory */
+        while ((ent = readdir (dir)) != NULL) {
+            if (strcmp(ent->d_name, ".") == 0) {
+                continue;
+            }
+            if (strcmp(ent->d_name, "..") == 0) {
+                continue;
+            } 
+            if (strcmp(ent->d_name, "RobotUtils.py") == 0) {
+                continue;
+            } 
+            if (hasEnding(ent->d_name, ".py") == false) {
+                printf("Skiping non python robot file: %s\n", ent->d_name);
+                continue;
+            }
+            //printf ("%s\n", ent->d_name);
+            char *fullpath = (char*)malloc(strlen(path.c_str()) + strlen(ent->d_name) + 2);
+            sprintf(fullpath, "%s/%s", path.c_str(), ent->d_name);
+            //printf ("%s\n", fullpath);
+
+            // Build RobotCall
+            RobotCall* rc = new RobotCall();
+            rc->notificationData.nodeId = nd->nodeId;
+            rc->notificationData.event = nd->event;
+            rc->notificationData.commandClassId = nd->commandClassId;
+            strcpy(rc->pathToRobot, fullpath);
+
+            pthread_t threadId;
+            pthread_create(&threadId, NULL, callRobot, (void*)rc);
+
+            delete fullpath;
+        }
+        closedir (dir);
+    } else {
+        /* could not open directory */
+       printf("Folder does not exist: %s\n", path.c_str());
+    }
+}
+
+void callUserHomeRobots (NotificationData* nd) {
+    callRobotsAtPath("~/.raspwave/robots", nd);
+}
+
+void callEtcRobots (NotificationData* nd) {
+    callRobotsAtPath("/etc/raspwave/robots", nd);
+}
+
+void* callAllRobots(void * p) {
+    NotificationData* nd = (NotificationData*) p;
+
+    callEtcRobots(nd);
+    callUserHomeRobots(nd);
+
+    delete nd;
+    pthread_exit(NULL);
 }
 
 //-----------------------------------------------------------------------------
@@ -187,10 +282,17 @@ void OnNotification
 		{
 			// We have received an event from the node, caused by a
 			// basic_set or hail message.
-			if( NodeInfo* nodeInfo = GetNodeInfo( _notification ) )
-			{
-				nodeInfo = nodeInfo;		// placeholder for real action
-			}
+
+                        // Build NotificationData
+                        ValueID valueId = _notification->GetValueID();
+                        NotificationData* nd = new NotificationData();
+                        nd->nodeId = valueId.GetNodeId();
+                        nd->event = _notification->GetEvent();
+                        nd->commandClassId = valueId.GetCommandClassId();
+                        printf("Built notification");
+
+                        pthread_t threadId;
+                        pthread_create(&threadId, NULL, callAllRobots, (void*)nd);
 			break;
 		}
 

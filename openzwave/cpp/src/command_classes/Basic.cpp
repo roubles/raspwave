@@ -94,7 +94,8 @@ void Basic::ReadXML
 	str = _ccElement->Attribute("setasreport");
 	if( str )
 	{
-		m_setAsReport = !strcmp( str, "true");
+                //#raspwave always notifies robots. always.
+		//m_setAsReport = !strcmp( str, "true");
 	}
 }
 
@@ -185,7 +186,6 @@ bool Basic::HandleMsg
 	uint32 const _instance	// = 1
 )
 {
-        char cmd[100] = {0};
         Log::Write( LogLevel_Info, "Message is %d:%d:%d.", (uint8)_data[0], (uint8)_data[1], (uint8) _data[2] );
 
 	if( BasicCmd_Report == (BasicCmd)_data[0] )
@@ -206,18 +206,10 @@ bool Basic::HandleMsg
 
 	if( BasicCmd_Set == (BasicCmd)_data[0] )
 	{
-            sprintf(cmd, "/etc/raspwave/robots/EmailAlertAlways.py %d %d", GetNodeId(), _data[1]);
-            system(cmd);
-	    Log::Write( LogLevel_Info, GetNodeId(), cmd);
+            //sprintf(cmd, "/etc/raspwave/robots/EmailAlertAlways.py %d %d", GetNodeId(), _data[1]);
+            //system(cmd);
+	    //Log::Write( LogLevel_Info, GetNodeId(), cmd);
             
-            if (_data[2] == 43) {
-                system("/bin/echo EOM | /usr/bin/mail -s \"Door is open\" rouble@gmail.com");
-		Log::Write( LogLevel_Info, GetNodeId(), "Door is open. Notifying.");
-            }
-            if (_data[2] == 212) {
-                system("/bin/echo EOM | /usr/bin/mail -s \"Door is closed\" rouble@gmail.com");
-		Log::Write( LogLevel_Info, GetNodeId(), "Door is Closed. Notifying.");
-            }
 		if( m_setAsReport )
 		{
 			Log::Write( LogLevel_Info, GetNodeId(), "Received Basic set from node %d: level=%d. Treating it as a Basic report.", GetNodeId(), _data[1] );
