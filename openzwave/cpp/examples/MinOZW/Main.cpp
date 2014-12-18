@@ -100,11 +100,12 @@ NodeInfo* GetNodeInfo
 	return NULL;
 }
 
+// #RASPWAVE
 void* callRobot(void * p) {
     RobotCall* rc = (RobotCall*) p;
 
     char cmd[200] = {0};
-    sprintf(cmd, "%s %d %d %d", rc->pathToRobot, rc->notificationData.nodeId, rc->notificationData.event, rc->notificationData.commandClassId);
+    sprintf(cmd, "/usr/local/bin/raspscpt %s %d %d %d", rc->pathToRobot, rc->notificationData.nodeId, rc->notificationData.event, rc->notificationData.commandClassId);
     system(cmd);
     Log::Write(LogLevel_Info, rc->notificationData.nodeId, cmd);
 
@@ -113,6 +114,7 @@ void* callRobot(void * p) {
     pthread_exit(NULL);
 }
 
+// #RASPWAVE
 bool hasEnding (std::string const &fullString, std::string const &ending)
 {
     if (fullString.length() >= ending.length()) {
@@ -122,6 +124,7 @@ bool hasEnding (std::string const &fullString, std::string const &ending)
     }
 }
 
+// #RASPWAVE
 void callRobotsAtPath (string path, NotificationData* nd) {
     DIR *dir;
     struct dirent *ent;
@@ -138,13 +141,11 @@ void callRobotsAtPath (string path, NotificationData* nd) {
                 continue;
             } 
             if (hasEnding(ent->d_name, ".py") == false) {
-                printf("Skiping non python robot file: %s\n", ent->d_name);
+                Log::Write(LogLevel_Info,"Skiping non python robot file: %s\n", ent->d_name);
                 continue;
             }
-            //printf ("%s\n", ent->d_name);
             char *fullpath = (char*)malloc(strlen(path.c_str()) + strlen(ent->d_name) + 2);
             sprintf(fullpath, "%s/%s", path.c_str(), ent->d_name);
-            //printf ("%s\n", fullpath);
 
             // Build RobotCall
             RobotCall* rc = new RobotCall();
@@ -161,18 +162,21 @@ void callRobotsAtPath (string path, NotificationData* nd) {
         closedir (dir);
     } else {
         /* could not open directory */
-       printf("Folder does not exist: %s\n", path.c_str());
+        Log::Write(LogLevel_Info, "Folder does not exist: %s\n", path.c_str());
     }
 }
 
+// #RASPWAVE
 void callUserHomeRobots (NotificationData* nd) {
     callRobotsAtPath("~/.raspwave/robots", nd);
 }
 
+// #RASPWAVE
 void callEtcRobots (NotificationData* nd) {
     callRobotsAtPath("/etc/raspwave/robots", nd);
 }
 
+// #RASPWAVE
 void* callAllRobots(void * p) {
     NotificationData* nd = (NotificationData*) p;
 
@@ -193,7 +197,7 @@ void OnNotification
 	void* _context
 )
 {
-        printf("Got Notification\n");
+        Log::Write(LogLevel_Info, "Got Notification");
 	// Must do this inside a critical section to avoid conflicts with the main thread
 	pthread_mutex_lock( &g_criticalSection );
 
@@ -280,6 +284,7 @@ void OnNotification
 
 		case Notification::Type_NodeEvent:
 		{
+                        // #RASPWAVE
 			// We have received an event from the node, caused by a
 			// basic_set or hail message.
 
@@ -289,7 +294,6 @@ void OnNotification
                         nd->nodeId = valueId.GetNodeId();
                         nd->event = _notification->GetEvent();
                         nd->commandClassId = valueId.GetCommandClassId();
-                        printf("Built notification");
 
                         pthread_t threadId;
                         pthread_create(&threadId, NULL, callAllRobots, (void*)nd);
@@ -370,10 +374,8 @@ int main( int argc, char* argv[] )
 	// The first argument is the path to the config files (where the manufacturer_specific.xml file is located
 	// The second argument is the path for saved Z-Wave network state and the log file.  If you leave it NULL 
 	// the log file will appear in the program's working directory.
-	Options::Create( "../../../config/", "", "" );
-	Options::Get()->AddOptionInt( "SaveLogLevel", LogLevel_Detail );
-	Options::Get()->AddOptionInt( "QueueLogLevel", LogLevel_Debug );
-	Options::Get()->AddOptionInt( "DumpTrigger", LogLevel_Error );
+	//Options::Create( "../../../config/", "", "" );
+	Options::Create( "/etc/raspwave/openzwave/config/", "/var/log/raspwave", "" );
 	Options::Get()->AddOptionInt( "PollInterval", 500 );
 	Options::Get()->AddOptionBool( "IntervalBetweenPolls", true );
 	Options::Get()->AddOptionBool("ValidateValueChanges", true);

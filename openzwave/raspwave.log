@@ -1,0 +1,190 @@
+2014-12-17 21:37:20.201 Always, OpenZwave Version 1.2.919 Starting Up
+2014-12-17 21:37:20.247 Info, mgr, Added driver for controller /dev/ttyUSB0
+2014-12-17 21:37:20.286 Info, Opening controller /dev/ttyUSB0
+2014-12-17 21:37:20.574 Detail,
+2014-12-17 21:37:20.663 Detail, contrlr, Received: 0x01, 0x10, 0x01, 0x15, 0x5a, 0x2d, 0x57, 0x61, 0x76, 0x65, 0x20, 0x32, 0x2e, 0x37, 0x38, 0x00, 0x01, 0x9b
+2014-12-17 21:37:20.720 Detail,
+2014-12-17 21:37:20.769 Info, contrlr, Received reply to FUNC_ID_ZW_GET_VERSION:
+2014-12-17 21:37:20.828 Info, contrlr, Static Controller library, version Z-Wave 2.78
+2014-12-17 21:37:20.877 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:20.929 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:20.979 Detail,
+2014-12-17 21:37:21.029 Detail, contrlr, Removing current message
+2014-12-17 21:37:21.079 Detail,
+2014-12-17 21:37:21.165 Detail, contrlr, Received: 0x01, 0x08, 0x01, 0x20, 0x01, 0x84, 0xdf, 0xce, 0x01, 0x43
+2014-12-17 21:37:21.229 Detail,
+2014-12-17 21:37:21.279 Info, contrlr, Received reply to FUNC_ID_ZW_MEMORY_GET_ID. Home ID = 0x0184dfce. Our node ID = 1
+2014-12-17 21:37:21.327 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:21.373 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:21.429 Detail,
+2014-12-17 21:37:21.478 Detail, contrlr, Removing current message
+2014-12-17 21:37:21.529 Detail,
+2014-12-17 21:37:21.626 Detail, contrlr, Received: 0x01, 0x04, 0x01, 0x05, 0x1c, 0xe3
+2014-12-17 21:37:21.680 Detail,
+2014-12-17 21:37:21.729 Info, contrlr, Received reply to FUNC_ID_ZW_GET_CONTROLLER_CAPABILITIES:
+2014-12-17 21:37:21.851 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:21.902 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:21.961 Detail,
+2014-12-17 21:37:22.009 Detail, contrlr, Removing current message
+2014-12-17 21:37:22.057 Detail,
+2014-12-17 21:37:22.145 Detail, contrlr, Received: 0x01, 0x2b, 0x01, 0x07, 0x03, 0x07, 0x00, 0x86, 0x00, 0x02, 0x00, 0x01, 0xfe, 0x80, 0xfe, 0x88, 0x0f, 0x00, 0x00, 0x00, 0xfb, 0x97, 0x7f, 0x82, 0x07, 0x00, 0x00, 0x80, 0x00, 0x80, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc2
+2014-12-17 21:37:22.194 Detail,
+2014-12-17 21:37:22.249 Info, contrlr, Received reply to FUNC_ID_SERIAL_API_GET_CAPABILITIES
+2014-12-17 21:37:22.295 Info, contrlr, Serial API Version: 3.7
+2014-12-17 21:37:22.349 Info, contrlr, Manufacturer ID: 0x0086
+2014-12-17 21:37:22.402 Info, contrlr, Product Type: 0x0002
+2014-12-17 21:37:22.450 Info, contrlr, Product ID: 0x0001
+2014-12-17 21:37:22.640 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:22.698 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:22.748 Detail,
+2014-12-17 21:37:22.789 Detail, contrlr, Removing current message
+2014-12-17 21:37:22.839 Detail,
+2014-12-17 21:37:22.922 Detail, contrlr, Received: 0x01, 0x04, 0x01, 0x56, 0x01, 0xad
+2014-12-17 21:37:22.963 Detail,
+2014-12-17 21:37:23.004 Info, contrlr, Received reply to GET_SUC_NODE_ID. Node ID = 1
+2014-12-17 21:37:23.031 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:23.057 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:23.082 Detail,
+2014-12-17 21:37:23.113 Detail, contrlr, Removing current message
+2014-12-17 21:37:23.139 Detail,
+2014-12-17 21:37:23.240 Detail, contrlr, Received: 0x01, 0x25, 0x01, 0x1c, 0x01, 0x20, 0x92, 0xb8, 0xf6, 0x6c, 0xd8, 0x0e, 0x6b, 0xc1, 0xda, 0xc5, 0x3a, 0x2a, 0x2d, 0x6e, 0x3b, 0x96, 0x4a, 0x6d, 0x26, 0xd5, 0xe6, 0x62, 0x18, 0xb0, 0x71, 0x44, 0xfc, 0xe4, 0x8a, 0x7c, 0xe1, 0xb6, 0xbf
+2014-12-17 21:37:23.267 Detail,
+2014-12-17 21:37:23.292 Info, contrlr, Received reply to FUNC_ID_ZW_GET_RANDOM: true
+2014-12-17 21:37:23.341 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:23.376 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:23.407 Detail,
+2014-12-17 21:37:23.433 Detail, contrlr, Removing current message
+2014-12-17 21:37:23.460 Detail,
+2014-12-17 21:37:23.560 Detail, contrlr, Received: 0x01, 0x25, 0x01, 0x02, 0x05, 0x08, 0x1d, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x01, 0xc2
+2014-12-17 21:37:23.586 Detail,
+2014-12-17 21:37:23.616 Info, mgr, Driver with Home ID of 0x0184dfce is now ready.
+2014-12-17 21:37:23.641 Info,
+2014-12-17 21:37:23.688 Info, contrlr, Received reply to FUNC_ID_SERIAL_API_GET_INIT_DATA:
+2014-12-17 21:37:23.725 Info, contrlr, Node 001 - Known
+2014-12-17 21:37:23.779 Detail, Node001, AdvanceQueries queryPending=0 queryRetries=0 queryStage=Probe1 live=1
+2014-12-17 21:37:23.828 Detail, Node001, QueryStage_Probe1
+2014-12-17 21:37:23.875 Detail, Node001, QueryStage_Associations
+2014-12-17 21:37:23.931 Detail, Node001, QueryStage_Neighbors
+2014-12-17 21:37:24.081 Info, contrlr, Node 004 - Known
+2014-12-17 21:37:24.132 Detail, Node004, AdvanceQueries queryPending=0 queryRetries=0 queryStage=Probe1 live=1
+2014-12-17 21:37:24.188 Detail, Node004, QueryStage_Probe1
+2014-12-17 21:37:24.237 Info, Node004, NoOperation::Set - Routing=true
+2014-12-17 21:37:24.357 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:24.406 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:24.460 Detail,
+2014-12-17 21:37:24.509 Detail, contrlr, Removing current message
+2014-12-17 21:37:24.560 Info, Got Notification
+2014-12-17 21:37:24.619 Info, Got Notification
+2014-12-17 21:37:24.668 Info, Got Notification
+2014-12-17 21:37:24.719 Info, Got Notification
+2014-12-17 21:37:24.769 Info, Got Notification
+2014-12-17 21:37:24.819 Info, Got Notification
+2014-12-17 21:37:24.871 Info, Got Notification
+2014-12-17 21:37:24.921 Info, Got Notification
+2014-12-17 21:37:24.975 Info, Got Notification
+2014-12-17 21:37:25.029 Info, Got Notification
+2014-12-17 21:37:25.077 Info, Got Notification
+2014-12-17 21:37:25.127 Info, Got Notification
+2014-12-17 21:37:25.175 Info, Got Notification
+2014-12-17 21:37:25.237 Info, Got Notification
+2014-12-17 21:37:25.288 Info, Got Notification
+2014-12-17 21:37:25.339 Info, Got Notification
+2014-12-17 21:37:25.389 Info, Got Notification
+2014-12-17 21:37:25.437 Info, Got Notification
+2014-12-17 21:37:25.490 Info, Got Notification
+2014-12-17 21:37:25.537 Info, Got Notification
+2014-12-17 21:37:25.589 Info, Got Notification
+2014-12-17 21:37:25.638 Info, Got Notification
+2014-12-17 21:37:25.689 Info, Got Notification
+2014-12-17 21:37:25.740 Info, Got Notification
+2014-12-17 21:37:25.784 Info, Got Notification
+2014-12-17 21:37:25.840 Info, Got Notification
+2014-12-17 21:37:25.890 Info, Got Notification
+2014-12-17 21:37:25.939 Info, Got Notification
+2014-12-17 21:37:25.989 Info, Got Notification
+2014-12-17 21:37:26.042 Info, Got Notification
+2014-12-17 21:37:26.101 Info, Got Notification
+2014-12-17 21:37:26.150 Detail,
+2014-12-17 21:37:26.243 Detail, contrlr, Received: 0x01, 0x05, 0x01, 0x06, 0x64, 0x0f, 0x96
+2014-12-17 21:37:26.289 Detail,
+2014-12-17 21:37:26.349 Info, contrlr, Received reply to FUNC_ID_SERIAL_API_SET_TIMEOUTS
+2014-12-17 21:37:26.399 Detail, contrlr, Expected reply was received
+2014-12-17 21:37:26.449 Detail, contrlr, Message transaction complete
+2014-12-17 21:37:26.502 Detail,
+2014-12-17 21:37:26.547 Detail, contrlr, Removing current message
+2014-12-17 21:37:26.604 Detail,
+2014-12-17 21:37:26.687 Detail, contrlr, Removing current message
+2014-12-17 21:37:26.744 Detail,
+2014-12-17 21:37:26.840 Detail, Node001, Received: 0x01, 0x20, 0x01, 0x80, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x56
+2014-12-17 21:37:26.892 Detail,
+2014-12-17 21:37:26.942 Info, Node001, Received reply to FUNC_ID_ZW_GET_ROUTING_INFO
+2014-12-17 21:37:26.999 Info, Node001, Neighbors of this node are:
+2014-12-17 21:37:27.049 Info, Node001, Node 4
+2014-12-17 21:37:27.100 Detail, Node001, Expected reply was received
+2014-12-17 21:37:27.157 Detail, Node001, Message transaction complete
+2014-12-17 21:37:27.202 Detail,
+2014-12-17 21:37:27.258 Detail, Node001, Removing current message
+2014-12-17 21:37:27.308 Detail,
+2014-12-17 21:37:27.403 Detail, Node004, Received: 0x01, 0x04, 0x01, 0x13, 0x01, 0xe8
+2014-12-17 21:37:27.460 Detail, Node004, ZW_SEND_DATA delivered to Z-Wave stack
+2014-12-17 21:37:27.512 Detail, Node004, Received: 0x01, 0x05, 0x00, 0x13, 0x01, 0x01, 0xe9
+2014-12-17 21:37:27.602 Info, Node004, WARNING: ZW_SEND_DATA failed. No ACK received - device may be asleep.
+2014-12-17 21:37:27.632 Info, Node004, Node 4 has been marked as asleep
+2014-12-17 21:37:27.658 Info, Node004, Node not responding - moving QueryStageComplete command to Wake-Up queue
+2014-12-17 21:37:27.685 Info, Got Notification
+2014-12-17 21:37:27.715 Info, Got Notification
+2014-12-17 21:37:27.759 Detail, Node001, AdvanceQueries queryPending=0 queryRetries=0 queryStage=Session live=1
+2014-12-17 21:37:27.789 Detail, Node001, QueryStage_Session
+2014-12-17 21:37:27.842 Detail, Node001, QueryStage_Dynamic
+2014-12-17 21:37:27.868 Detail, Node001, QueryStage_Configuration
+2014-12-17 21:37:27.894 Detail, Node001, QueryStage_Complete
+2014-12-17 21:37:27.925 Warning, CheckCompletedNodeQueries m_allNodesQueried=0 m_awakeNodesQueried=0
+2014-12-17 21:37:27.951 Warning, CheckCompletedNodeQueries all=0, deadFound=0 sleepingOnly=1
+2014-12-17 21:37:27.978 Info, Node query processing complete except for sleeping nodes.
+2014-12-17 21:37:28.010 Info, Got Notification
+2014-12-17 21:37:28.035 Info, Got Notification
+2014-12-17 21:38:48.052 Detail, Node004, Received: 0x01, 0x09, 0x00, 0x04, 0x08, 0x04, 0x03, 0x20, 0x01, 0xff, 0x23
+2014-12-17 21:38:48.079 Detail,
+2014-12-17 21:38:48.108 Info, Message is 1:255:35.
+2014-12-17 21:38:48.139 Info, Node004, Received Basic set from node 4: level=255. Sending event notification.
+2014-12-17 21:38:48.169 Info, Got Notification
+2014-12-17 21:38:48.204 Detail, Node004, Received: 0x01, 0x09, 0x00, 0x04, 0x00, 0x04, 0x03, 0x20, 0x01, 0xff, 0x2b
+2014-12-17 21:38:48.319 Detail,
+2014-12-17 21:38:48.460 Info, Message is 1:255:43.
+2014-12-17 21:38:48.588 Info, Node004, Received Basic set from node 4: level=255. Sending event notification.
+2014-12-17 21:38:48.729 Info, Got Notification
+2014-12-17 21:38:48.879 Info, Skiping non python robot file: EmailAlertAlways.pyc
+2014-12-17 21:38:49.082 Info, Folder does not exist: /home/pi/.raspwave/robots
+2014-12-17 21:38:49.296 Info, Skiping non python robot file: EmailAlertAlways.pyc
+2014-12-17 21:38:49.520 Info, Folder does not exist: /home/pi/.raspwave/robots
+2014-12-17 21:38:50.558 Detail, Node004, Received: 0x01, 0x09, 0x00, 0x04, 0x08, 0x04, 0x03, 0x20, 0x01, 0x00, 0xdc
+2014-12-17 21:38:50.758 Detail,
+2014-12-17 21:38:50.959 Info, Message is 1:0:220.
+2014-12-17 21:38:51.169 Info, Node004, Received Basic set from node 4: level=0. Sending event notification.
+2014-12-17 21:38:51.390 Info, Got Notification
+2014-12-17 21:38:51.652 Detail, Node004, Received: 0x01, 0x09, 0x00, 0x04, 0x00, 0x04, 0x03, 0x20, 0x01, 0x00, 0xd4
+2014-12-17 21:38:51.882 Detail,
+2014-12-17 21:38:52.060 Info, Message is 1:0:212.
+2014-12-17 21:38:52.210 Info, Node004, Received Basic set from node 4: level=0. Sending event notification.
+2014-12-17 21:38:52.370 Info, Got Notification
+2014-12-17 21:38:52.511 Info, Skiping non python robot file: EmailAlertAlways.pyc
+2014-12-17 21:38:52.828 Info, Folder does not exist: /home/pi/.raspwave/robots
+2014-12-17 21:38:53.256 Info, Skiping non python robot file: EmailAlertAlways.pyc
+2014-12-17 21:38:53.649 Info, Folder does not exist: /home/pi/.raspwave/robots
+2014-12-17 21:38:54.031 Detail, Node004, Received: 0x01, 0x09, 0x00, 0x04, 0x00, 0x04, 0x03, 0x20, 0x01, 0x00, 0xd4
+2014-12-17 21:38:54.450 Detail,
+2014-12-17 21:38:54.800 Info, Message is 1:0:212.
+2014-12-17 21:38:55.159 Info, Node004, Received Basic set from node 4: level=0. Sending event notification.
+2014-12-17 21:38:55.563 Info, Got Notification
+2014-12-17 21:38:55.970 Info, Skiping non python robot file: EmailAlertAlways.pyc
+2014-12-17 21:38:56.321 Info, Folder does not exist: /home/pi/.raspwave/robots
+2014-12-17 21:39:01.630 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertIfArmed.py 4 255 0
+2014-12-17 21:39:02.978 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertIfArmed.py 4 255 0
+2014-12-17 21:39:06.767 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertIfArmed.py 4 0 0
+2014-12-17 21:39:08.219 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertIfArmed.py 4 0 0
+2014-12-17 21:39:09.315 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertAlways.py 4 255 0
+2014-12-17 21:39:09.966 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertIfArmed.py 4 0 0
+2014-12-17 21:39:10.065 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertAlways.py 4 255 0
+2014-12-17 21:39:12.070 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertAlways.py 4 0 0
+2014-12-17 21:39:12.664 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertAlways.py 4 0 0
+2014-12-17 21:39:13.136 Info, Node004, /usr/local/bin/raspscpt /etc/raspwave/robots/EmailAlertAlways.py 4 0 0

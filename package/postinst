@@ -1,0 +1,4 @@
+#!/bin/sh
+
+/usr/sbin/update-rc.d raspwave defaults
+/etc/init.d/raspwave start

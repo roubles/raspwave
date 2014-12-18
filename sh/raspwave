@@ -1,0 +1,3 @@
+#!/bin/sh
+LD_PATH=/usr/local/lib/raspwave/
+LD_LIBRARY_PATH="$LD_PATH:$LD_LIBRARY_PATH" /usr/local/bin/MinOZW

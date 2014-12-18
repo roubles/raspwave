@@ -29,6 +29,7 @@
 #include <cstring>
 #include <pthread.h>
 #include <iostream>
+#include <stdlib.h> 
 #include "Defs.h"
 #include "LogImpl.h"
 
@@ -60,6 +61,7 @@ LogImpl::LogImpl
 	} else {
 		this->pFile = fopen( m_filename.c_str(), "a" );
 	}
+        //myfile.open ("/tmp/raspwave.log");
 	if( this->pFile == NULL )
 	{
 		std::cerr << "Could Not Open OZW Log File." << std::endl;
@@ -76,6 +78,18 @@ LogImpl::~LogImpl
 )
 {
 	fclose( this->pFile );
+        //myfile.close();
+}
+
+static string choppa(const string &t)
+{
+    string str = t;
+    size_t endpos = str.find_last_not_of(" \t\n");
+    if( string::npos != endpos ) {
+        str = str.substr( 0, endpos+1 );
+    }
+
+    return str;
 }
 
 //-----------------------------------------------------------------------------
@@ -99,6 +113,7 @@ void LogImpl::Write
 	if( (_logLevel <= m_queueLevel) || (_logLevel == LogLevel_Internal) )	// we're going to do something with this message...
 	{
 		char lineBuf[1024] = {0};
+		char cmd[1500] = {0};
 		//int lineLen = 0;
 		if( _format != NULL && _format[0] != '\0' )
 		{
@@ -122,17 +137,25 @@ void LogImpl::Write
 					outBuf.append(loglevelStr);
 					outBuf.append(nodeStr);
 					outBuf.append(lineBuf);
-					outBuf.append("\n");
-
 				}
 
 				// print message to file (and possibly screen)
 				if( this->pFile != NULL )
 				{
-					fputs( outBuf.c_str(), pFile );
+                                    outBuf = choppa(outBuf);
+                                    // This gives shitty performance. But
+                                    // works.
+                                    // Note we always append logs and count
+                                    // on logrotate to rotate the log files.
+                                    sprintf(cmd, "/bin/echo \"%s\" >> %s\n", outBuf.c_str(), m_filename.c_str());
+                                    system(cmd);
+                                    //The following code does not work on
+                                    //raspberry PI
+			            //fputs( outBuf.c_str(), pFile );
 				}
 				if( m_bConsoleOutput )
 				{
+					outBuf.append("\n");
 					fputs( outBuf.c_str(), stdout );
 				}
 			}
