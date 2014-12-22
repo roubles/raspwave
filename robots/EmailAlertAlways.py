@@ -2,20 +2,25 @@
 # @author rouble matta
 
 import sys
+import logging
 from RobotUtils import sendEmail, getNodeName, readStringValue
+from NotificationHandler import Notification,getNodeReport,setupLogger
+
+setupLogger("robots", "/var/log/raspwave/robots.log", True, False)
+logger = logging.getLogger("robots")
 
 # Always send an email, regardless of armed state
+def processSignalOnSensor(id, state, time):
+    name = getNodeName(id)
+    alarm_state = str(readStringValue("STATE"))
+    if (state == "open"):
+        sendEmail(logger, ["rouble@gmail.com"],  "[" + alarm_state + "] " + name + " is open at " + time, getNodeReport(logger, id));
+    elif (state == "close") :
+        sendEmail(logger, ["rouble@gmail.com"], "[" + alarm_state + "] " + name + " is closed at " + time, getNodeReport(logger,id));
 
-def processSignalOnSensor(name, signal):
-    state = str(readStringValue("STATE"))
-    if (signal == "255"):
-        sendEmail(["rouble@gmail.com"],  "[" + state + "] " + name + " is open", "hello");
-    elif (signal == "0") :
-        sendEmail(["rouble@gmail.com"], "[" + state + "] " + name + " is closed", "hello");
-
-def main(id, signal):
-    processSignalOnSensor(getNodeName(id), signal)
+def main(*args):
+    processSignalOnSensor(args[1], args[2], args[7])
     return 0
 
 if __name__=='__main__':
-    sys.exit(main(sys.argv[1], sys.argv[2]))
+    sys.exit(main(*sys.argv))

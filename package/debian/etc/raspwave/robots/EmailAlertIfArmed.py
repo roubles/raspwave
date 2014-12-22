@@ -2,14 +2,20 @@
 # @author rouble matta
 
 import sys
+import logging
+
 from RobotUtils import readStringValue, sendEmail
+from NotificationHandler import setupLogger
 import EmailAlertAlways
 
-def main (id, signal):
+setupLogger("robots", "/var/log/raspwave/robots.log", True, False)
+logger = logging.getLogger("robots")
+
+def main (*args):
     if (readStringValue("STATE") != "ARMED"):
-        print "Not armed!"
+        logger.info("Not armed!")
         return 1
-    return EmailAlertAlways.main(id, signal)
+    return EmailAlertAlways.main(*args)
 
 if __name__=='__main__':
-    sys.exit(main(sys.argv[1], sys.argv[2]))
+    sys.exit(main(*sys.argv))

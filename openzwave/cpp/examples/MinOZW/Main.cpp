@@ -69,7 +69,10 @@ static pthread_mutex_t initMutex = PTHREAD_MUTEX_INITIALIZER;
 typedef struct {
     uint8 nodeId;
     uint8 event;
+    char value[100];
+    char state[100];
     uint8 commandClassId;
+    uint64 fullHex;
 } NotificationData;
 
 typedef struct {
@@ -187,6 +190,73 @@ void* callAllRobots(void * p) {
     pthread_exit(NULL);
 }
 
+// #RASPWAVE
+void* postNotification(void * p) {
+    NotificationData* nd = (NotificationData*) p;
+
+    char cmd[200] = {0};
+    sprintf(cmd, "/etc/raspwave/pylib/postNotification.py %d %s %s %d %d %llu", nd->nodeId, nd->state, nd->value, nd->event, nd->commandClassId, nd->fullHex);
+    system(cmd);
+    Log::Write(LogLevel_Info, nd->nodeId, cmd);
+
+    delete nd;
+    pthread_exit(NULL);
+}
+
+void notifyEvent (Notification const* _notification) {
+    // Build NotificationData
+    ValueID valueId = _notification->GetValueID();
+    NotificationData* nd = new NotificationData();
+    nd->nodeId = valueId.GetNodeId();
+    nd->commandClassId = valueId.GetCommandClassId();
+    nd->fullHex = valueId.GetId();
+
+    //Get event
+    nd->event = _notification->GetEvent();
+    if (nd->event == 0) {
+        strcpy(nd->state, "close");
+        strcpy(nd->value, "False");
+    } else if (nd->event == 255) {
+        strcpy(nd->state, "open");
+        strcpy(nd->value, "True");
+    } else {
+        strcpy(nd->state, "unknown");
+        strcpy(nd->value, "unknown");
+    }
+
+    pthread_t threadId;
+    pthread_create(&threadId, NULL, postNotification, (void*)nd);
+}
+
+void notifyValue (Notification const* _notification) {
+    // Build NotificationData
+    ValueID valueId = _notification->GetValueID();
+    NotificationData* nd = new NotificationData();
+    nd->nodeId = valueId.GetNodeId();
+    nd->commandClassId = valueId.GetCommandClassId();
+    nd->fullHex = valueId.GetId();
+
+    //Get value
+    string value;
+    Manager::Get()->GetValueAsString(valueId, &value);
+    Log::Write(LogLevel_Info,"Got value: %s", value.c_str());
+    strcpy(nd->value, value.c_str());
+
+    //Normalization
+    if (strcasecmp(nd->value, "true")) {
+        nd->event = 0;
+        strcpy(nd->state, "close");
+    } else  if (strcasecmp(nd->value, "false")) {
+        nd->event = 255;
+        strcpy(nd->state, "open");
+    } else {
+        strcpy(nd->state, "unknown");
+    }
+
+    pthread_t threadId;
+    pthread_create(&threadId, NULL, postNotification, (void*)nd);
+}
+
 //-----------------------------------------------------------------------------
 // <OnNotification>
 // Callback that is triggered when a value, group or node changes
@@ -197,7 +267,7 @@ void OnNotification
 	void* _context
 )
 {
-        Log::Write(LogLevel_Info, "Got Notification");
+        Log::Write(LogLevel_Info, "Got Notification: %d", _notification->GetType());
 	// Must do this inside a critical section to avoid conflicts with the main thread
 	pthread_mutex_lock( &g_criticalSection );
 
@@ -232,11 +302,7 @@ void OnNotification
 
 		case Notification::Type_ValueChanged:
 		{
-			// One of the node values has changed
-			if( NodeInfo* nodeInfo = GetNodeInfo( _notification ) )
-			{
-				nodeInfo = nodeInfo;		// placeholder for real action
-			}
+                        notifyValue(_notification);
 			break;
 		}
 
@@ -285,18 +351,7 @@ void OnNotification
 		case Notification::Type_NodeEvent:
 		{
                         // #RASPWAVE
-			// We have received an event from the node, caused by a
-			// basic_set or hail message.
-
-                        // Build NotificationData
-                        ValueID valueId = _notification->GetValueID();
-                        NotificationData* nd = new NotificationData();
-                        nd->nodeId = valueId.GetNodeId();
-                        nd->event = _notification->GetEvent();
-                        nd->commandClassId = valueId.GetCommandClassId();
-
-                        pthread_t threadId;
-                        pthread_create(&threadId, NULL, callAllRobots, (void*)nd);
+                        notifyEvent(_notification);
 			break;
 		}
 

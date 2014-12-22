@@ -12,7 +12,8 @@
 PATH="/sbin:/bin:/usr/sbin:/usr/bin"
 NAME="raspwave"
 
-LOCKFILE=/etc/raspwave/raspwave.pid
+NH_LOCKFILE=/etc/raspwave/nh.pid
+RASPWAVE_LOCKFILE=/etc/raspwave/raspwave.pid
 
 killtree() {
     local _pid=$1
@@ -26,23 +27,38 @@ killtree() {
 
 case "${1}" in
     start)
-        if [ -e $LOCKFILE ]; then
-            PID=`cat $LOCKFILE`
-            echo "raspwave already running: $PID"
+        if [ -e $NH_LOCKFILE ]; then
+            NH_PID=`cat $NH_LOCKFILE`
+            echo "NH already running: $NH_PID"
+        else
+            /etc/raspwave/pylib/NotificationHandler.py&
+            NH_PID=$!
+            echo $NH_PID > "$NH_LOCKFILE"
+            echo "Started NH with PID=$NH_PID"
+        fi
+        if [ -e $RASPWAVE_LOCKFILE ]; then
+            RASPWAVE_PID=`cat $RASPWAVE_LOCKFILE`
+            echo "raspwave already running: $RASPWAVE_PID"
         else
             /usr/local/bin/raspwave& 
             RASPWAVE_PID=$!
-            echo $RASPWAVE_PID > "$LOCKFILE"
+            echo $RASPWAVE_PID > "$RASPWAVE_LOCKFILE"
             echo "Started raspwave with PID=$RASPWAVE_PID"
         fi
         break
         ;;
     stop)
-        if [ -r $LOCKFILE ]; then
-            PID=`cat $LOCKFILE`
-            echo "Stopping raspwave with PID=$PID"
-            killtree $PID 9
-            rm -rf $LOCKFILE
+        if [ -r $NH_LOCKFILE ]; then
+            NH_PID=`cat $NH_LOCKFILE`
+            echo "Stopping NH with PID=$NH_PID"
+            killtree $NH_PID 9
+            rm -rf $NH_LOCKFILE
+        fi
+        if [ -r $RASPWAVE_LOCKFILE ]; then
+            RASPWAVE_PID=`cat $RASPWAVE_LOCKFILE`
+            echo "Stopping raspwave with PID=$RASPWAVE_PID"
+            killtree $RASPWAVE_PID 9
+            rm -rf $RASPWAVE_LOCKFILE
         fi
         break
         ;;

@@ -11,14 +11,30 @@ import anydbm
 import subprocess
 import ConfigParser
 
+def convert_timedelta_str(duration):
+    hours, minutes, seconds = convert_timedelta(duration)
+    return '{} hours, {} minutes, {} seconds'.format(hours, minutes, seconds)
+
+def convert_timedelta(duration):
+    days, seconds = duration.days, duration.seconds
+    hours = days * 24 + seconds // 3600
+    minutes = (seconds % 3600) // 60
+    seconds = (seconds % 60)
+    return hours, minutes, seconds
+
+def getNodes ():
+    config = ConfigParser.ConfigParser()
+    config.read("/etc/raspwave/conf/nodes.conf")
+    return config.sections()
+
 def getNodeName (id):
     config = ConfigParser.ConfigParser()
     config.read("/etc/raspwave/conf/nodes.conf")
     return config.get(id, "NAME")
 
-def sendEmail (emailAddresses, subject, body):
+def sendEmail (logger, emailAddresses, subject, body):
     for emailAddress in emailAddresses:
-        print "Sending email to " + emailAddress
+        logger.info("Sending email to " + emailAddress)
         p1 = subprocess.Popen(['/bin/echo', body], stdout=subprocess.PIPE) #Set up the echo command and direct the output to a pipe
         p2 = subprocess.Popen(['/usr/bin/mail', '-s', subject, emailAddress], stdin=p1.stdout) #send p1's output to p2
         p1.stdout.close() #make sure we close the output so p2 doesn't hang waiting for more input
