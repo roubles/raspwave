@@ -34,6 +34,8 @@
 #include <stdlib.h>
 #include <pthread.h>
 #include <dirent.h>
+#include <sys/socket.h>
+#include <arpa/inet.h> //inet_addr
 #include "Options.h"
 #include "Manager.h"
 #include "Driver.h"
@@ -43,6 +45,7 @@
 #include "value_classes/ValueStore.h"
 #include "value_classes/Value.h"
 #include "value_classes/ValueBool.h"
+#include "command_classes/SensorBinary.h"
 #include "platform/Log.h"
 
 using namespace OpenZWave;
@@ -190,6 +193,104 @@ void* callAllRobots(void * p) {
     pthread_exit(NULL);
 }
 
+void SetValue(int nodeid, int commandclass, int value)
+{
+    pthread_mutex_lock( &g_criticalSection );
+    for( list<NodeInfo*>::iterator it = g_nodes.begin(); it != g_nodes.end(); ++it ) {
+        NodeInfo* nodeInfo = *it;
+        if( nodeInfo->m_nodeId != nodeid ) continue;
+        for( list<ValueID>::iterator it2 = nodeInfo->m_values.begin(); it2 != nodeInfo->m_values.end(); ++it2 ) {
+            ValueID v = *it2;
+            if( v.GetCommandClassId() == commandclass) {
+                Manager::Get()->SetValue(v, value); 
+                break;
+            }
+        }
+    }
+
+
+    pthread_mutex_unlock( &g_criticalSection );
+}
+
+void *connection_handler(void *socket_desc)
+{
+    //Get the socket descriptor
+    int sock = *(int*)socket_desc;
+    int read_size;
+    char client_message[2000];
+     
+    //Receive a message from client
+    while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 ) {
+        client_message[read_size] = '\0';
+
+        write(sock, "OK" , 2);
+        memset(client_message, 0, 2000);
+    }
+     
+    if(read_size == 0) {
+        Log::Write(LogLevel_Info, "Client disconnected");
+        fflush(stdout);
+    } else if(read_size == -1) {
+        Log::Write(LogLevel_Info, "recv failed");
+    }
+         
+    return 0;
+}
+
+//#RASPWAVE
+void openMainListener () {
+    int socket_desc , client_sock , c;
+    struct sockaddr_in server , client;
+     
+    //Create socket
+    socket_desc = socket(AF_INET , SOCK_STREAM , 0);
+    if (socket_desc == -1) {
+       Log::Write(LogLevel_Info, "Could not create socket");
+    }
+    Log::Write(LogLevel_Info,"Socket created");
+     
+    //Prepare the sockaddr_in structure
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons( 8888 );
+     
+    //Bind
+    if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0) {
+        //print the error message
+        Log::Write(LogLevel_Info, "bind failed. Error");
+        return;
+    }
+   Log::Write(LogLevel_Info, "bind done");
+     
+    //Listen
+    listen(socket_desc , 3);
+     
+    //Accept and incoming connection
+   Log::Write(LogLevel_Info, "Waiting for incoming connections...");
+    c = sizeof(struct sockaddr_in);
+     
+     
+    //Accept and incoming connection
+   Log::Write(LogLevel_Info, "Waiting for incoming connections...");
+    c = sizeof(struct sockaddr_in);
+    pthread_t thread_id;
+	
+    while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) ) {
+        Log::Write(LogLevel_Info, "Connection accepted");
+         
+        if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &client_sock) < 0) {
+            Log::Write(LogLevel_Info, "could not create thread");
+            return;
+        }
+        Log::Write(LogLevel_Info, "Handler assigned");
+    }
+     
+    if (client_sock < 0) {
+        Log::Write(LogLevel_Info, "accept failed");
+        return;
+    }
+}
+
 // #RASPWAVE
 void* postNotification(void * p) {
     NotificationData* nd = (NotificationData*) p;
@@ -229,8 +330,13 @@ void notifyEvent (Notification const* _notification) {
 }
 
 void notifyValue (Notification const* _notification) {
-    // Build NotificationData
     ValueID valueId = _notification->GetValueID();
+    if (valueId.GetCommandClassId() != SensorBinary::StaticGetCommandClassId()) {
+        Log::Write(LogLevel_Info,"Ignoring notification because it is of command class: %d", valueId.GetCommandClassId());
+        return;
+    }
+
+    // Build NotificationData
     NotificationData* nd = new NotificationData();
     nd->nodeId = valueId.GetNodeId();
     nd->commandClassId = valueId.GetCommandClassId();

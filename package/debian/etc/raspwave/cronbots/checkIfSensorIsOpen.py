@@ -19,11 +19,12 @@ for node in getNodes():
     notification = getNotification(logger, node, 0)
     if not notification:
         logger.info("No notifications for node: " + name)
-    elif (notification.value == '0'):
+    elif (notification.state == 'close'):
         delta = now - notification.time
         logger.info(name + " has been closed for " + convert_timedelta_str(delta))
-    elif (notification.value == 255):
+    elif (notification.state == 'open'):
         delta = now - notification.time
+        logger.info(name + " has been open for " + convert_timedelta_str(delta))
         if delta.total_seconds() > maxOpenTimeInSeconds:
             subject = name + " has been open for " + convert_timedelta_str(delta) 
             logger.info(subject)

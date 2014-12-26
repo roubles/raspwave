@@ -10,10 +10,9 @@
 ### END INIT INFO
 
 PATH="/sbin:/bin:/usr/sbin:/usr/bin"
-NAME="raspwave"
 
-NH_LOCKFILE=/etc/raspwave/nh.pid
-RASPWAVE_LOCKFILE=/etc/raspwave/raspwave.pid
+NH_LOCKFILE=/var/run/raspwave_nh.pid
+RASPWAVE_LOCKFILE=/var/run/raspwave.pid
 
 killtree() {
     local _pid=$1
