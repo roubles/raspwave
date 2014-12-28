@@ -15,21 +15,42 @@ import subprocess
 logger = None
 
 class Notification:
-    def __init__ (self, nodeId, state, event, value, commandClass, fullHex, time, ignore):
+    birthMark = 0
+    def __init__ (self, nodeId, commandClass, fullHex, time, ignore):
+        self.id = time.strftime("%Y%m%d%H%M%S") + birthMark
+        birthMark = birthMark + 1
+        self.type = "base"
         self.nodeId = nodeId
-        self.state = state
-        self.event = event
-        self.value = value
         self.commandClass = commandClass
         self.fullHex = fullHex
         self.time = time
         self.ignore = ignore
 
-    def spaceSeparated(self):
-        return " " + str(self.nodeId) + " " + str(self.state) + " " + str(self.event) + " " + str(self.value) + " " + str(self.commandClass) + " " + str(self.fullHex) + " \"" + str(self.time) + "\""
+    def __str__ (self):
+        return "Notification id[" + str(id) +" ], nodeId=[" + str(self.nodeId) + "], commandClass=[" + str(self.commandClass) + "], fullHex=[" + str(self.fullHex) + "], time=[" + str(self.time) + "], ignore=[" + str(self.ignore) + "]"
+
+class SensorValueNotification(Notification):
+    def __init__ (self, nodeId, value, commandClass, fullHex, time, ignore):
+        Notification.__init__(self, nodeId, commandClass, fullHex, time, ignore)
+        self.value = value
+        self.type = "SensorValueNotification"
 
     def __str__ (self):
-        return "Notification nodeId=[" + str(self.nodeId) + "], state=[" + str(self.state) + "] event=[" + str(self.event) + "], value=[" + str(self.value) + "], commandClass=[" + str(self.commandClass) + "], fullHex=[" + str(self.fullHex) + "], time=[" + str(self.time) + "], ignore=[" + str(self.ignore) + "]"
+        return "Notification id[" + str(id) +" ], nodeId=[" + str(self.nodeId) + "], value=[" + str(self.value) + "], commandClass=[" + str(self.commandClass) + "], fullHex=[" + str(self.fullHex) + "], time=[" + str(self.time) + "], ignore=[" + str(self.ignore) + "]"
+
+class SensorValueChangeNotification(SensorValueNotification):
+    def __init__ (self, nodeId, value, previousValue, commandClass, fullHex, time, ignore):
+        SensorValueNotification.__init__(self, nodeId, value, commandClass, fullHex, time, ignore)
+        self.previousValue = previousValue
+        self.type = "SensorValueChangeNotification"
+
+    def __str__ (self):
+        return "Notification id[" + str(id) +" ], nodeId=[" + str(self.nodeId) + "], value=[" + str(self.value) + "], previousValue=[" + previousValue + "] commandClass=[" + str(self.commandClass) + "], fullHex=[" + str(self.fullHex) + "], time=[" + str(self.time) + "], ignore=[" + str(self.ignore) + "]"
+
+class NodeControlBlock:
+    def __init__(self, id):
+        self.id = id
+        notifications = []
 
 class RobotLauncher(threading.Thread):
     def __init__ (self, previous, current):
@@ -161,8 +182,8 @@ class NotificationListener(threading.Thread):
 
 class NotificationHandler:
     def __init__ (self):
-        self.PORT =55555
-        self.maxNotifcationsPerNode = 10
+        self.PORT = 55555
+        self.maxNotifcationsPerNode = 15
         self.shelfLocation = '/etc/raspwave/db/nh.shelf'
         self.shelf = shelve.open(self.shelfLocation)
         self.mainNotificationListenerThread = None
@@ -170,13 +191,22 @@ class NotificationHandler:
     def dump(self):
         for key in self.shelf.keys():
             logger.info("Node ID: " + key)
-            l = self.shelf.get(key, [])
-            for notification in l:
-                logger.info("    " + str(notification))
-    def postNotification (self, nodeId, state, event, value, commandClass, fullHex):
+            ncb = self.shelf.get(key, None)
+            if ncb is not None:
+                l = ncb.notifications
+                for notification in l:
+                    logger.info("    " + str(notification))
+    def postBatteryValueNotification (self, nodeId, value, commandClass, fullHex):
+        notification = BatteryValueNotification(nodeId, commandClass, value, fullHex, datetime.datetime.now(), False)
+        self.postNotification(nodeId, notification)
+    def postSensorValueNotification (self, nodeId, value, commandClass, fullHex):
+        notification = SensorValueNotification(nodeId, commandClass, value, fullHex, datetime.datetime.now(), False)
+        self.postNotification(nodeId, notification)
+    def postSensorValueChangeNotification (self, nodeId, value, previousValue, commandClass, fullHex):
+        notification = SensorValueChangeNotification(nodeId, commandClass, value, previousValue, fullHex, datetime.datetime.now(), False)
+        self.postNotification(nodeId, notification)
+    def postNotification (self, nodeId, notification):
         nodeIdStr = str(nodeId)
-        l = self.shelf.get(nodeIdStr, [])
-        notification = Notification(nodeId, state, event, value, commandClass, fullHex, datetime.datetime.now(), False)
         previous = self.getLatestNotificationFromNode (nodeIdStr)
 
         # Truncate list to maxNotifcationsPerNode size
@@ -189,18 +219,33 @@ class NotificationHandler:
         r.daemon = True
         r.start()
         self.robotLaunchers.append(r)
-    def getNotificationFromNode (self, nodeId, index):
+    def getNotificationFromNodeByIndex (self, nodeId, index):
         indexInt = int(index)
         nodeIdStr = str(nodeId)
-        logger.info("From node(" + nodeIdStr + ") getting notification[" + str(index) + "]")
-        l = self.shelf.get(nodeIdStr, None)
-        if not l:
-            logger.info( "no list")
+        logger.info("From node(" + nodeIdStr + ") getting notification at index[" + str(index) + "]")
+        ncb = self.shelf.get(nodeIdStr, None)
+        if not ncb:
+            logger.info("no ncb")
             return None
-        if indexInt >= len(l):
-            logger.info( "length is short: " + str(len(l)))
+        else: 
+            l = ncb.notifications
+            if indexInt >= len(l):
+                logger.info( "length is short: " + str(len(l)))
+                return None
+            return l[indexInt]
+    def getNotificationFromNodeById (self, nodeId, notificationId):
+        indexInt = int(index)
+        nodeIdStr = str(nodeId)
+        logger.info("From node(" + nodeIdStr + ") getting notification with id[" + str(notificationId) + "]")
+        ncb = self.shelf.get(nodeIdStr, None)
+        if not ncb:
+            logger.info("no ncb")
             return None
-        return l[indexInt]
+        else: 
+            for notification in ncb.notifications:
+                if notificationId == notification.id:
+                    return notification
+            return None
     def getLatestNotificationFromNode (self, nodeId):
         return self.getNotificationFromNode(nodeId, 0)
     def getAllNotificationsFromNode(self, nodeId):

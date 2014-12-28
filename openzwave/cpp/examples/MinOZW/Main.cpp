@@ -36,6 +36,7 @@
 #include <dirent.h>
 #include <sys/socket.h>
 #include <arpa/inet.h> //inet_addr
+#include <errno.h>
 #include "Options.h"
 #include "Manager.h"
 #include "Driver.h"
@@ -69,6 +70,7 @@ static pthread_mutex_t g_criticalSection;
 static pthread_cond_t  initCond  = PTHREAD_COND_INITIALIZER;
 static pthread_mutex_t initMutex = PTHREAD_MUTEX_INITIALIZER;
 
+// #RASPWAVE
 typedef struct {
     uint8 nodeId;
     uint8 event;
@@ -82,6 +84,25 @@ typedef struct {
     NotificationData notificationData;
     char pathToRobot[200];
 } RobotCall;
+
+// #RASPWAVE ZWAVE SERVER
+#define MAX_FDS          10
+#define LISTENER_PORT    55556
+#define LISTENER_INDEX   0
+#define MAX_PACKET_DATA  1000
+
+typedef struct packetData_t_ {
+    int           bytes;
+    char data[MAX_PACKET_DATA];
+    int           fd;
+} packetData_t;
+
+typedef struct socketTable_t_ {
+    int fdTable[MAX_FDS];
+} socketTable_t;
+
+static socketTable_t socketTable;
+
 
 //-----------------------------------------------------------------------------
 // <GetNodeInfo>
@@ -193,101 +214,296 @@ void* callAllRobots(void * p) {
     pthread_exit(NULL);
 }
 
-void SetValue(int nodeid, int commandclass, int value)
+int SetBoolValue(int nodeid, int commandclass, bool value)
 {
+    bool res;
+
     pthread_mutex_lock( &g_criticalSection );
     for( list<NodeInfo*>::iterator it = g_nodes.begin(); it != g_nodes.end(); ++it ) {
         NodeInfo* nodeInfo = *it;
+        Log::Write(LogLevel_Info, "Working on node: %d", nodeInfo->m_nodeId);
         if( nodeInfo->m_nodeId != nodeid ) continue;
+        Log::Write(LogLevel_Info, "Still working on node: %d", nodeid);
         for( list<ValueID>::iterator it2 = nodeInfo->m_values.begin(); it2 != nodeInfo->m_values.end(); ++it2 ) {
             ValueID v = *it2;
+            Log::Write(LogLevel_Info, "Working on value: %d", v.GetCommandClassId());
             if( v.GetCommandClassId() == commandclass) {
-                Manager::Get()->SetValue(v, value); 
-                break;
+                res = Manager::Get()->SetValue(v, value);
+                Log::Write(LogLevel_Info, "SetValue result=%d", res);
+                return res;
             }
         }
     }
-
-
     pthread_mutex_unlock( &g_criticalSection );
+    return 0; //return false
 }
 
-void *connection_handler(void *socket_desc)
+bool addSocketToTable(int fd) 
 {
-    //Get the socket descriptor
-    int sock = *(int*)socket_desc;
-    int read_size;
-    char client_message[2000];
-     
-    //Receive a message from client
-    while( (read_size = recv(sock , client_message , 2000 , 0)) > 0 ) {
-        client_message[read_size] = '\0';
+    int idx;
 
-        write(sock, "OK" , 2);
-        memset(client_message, 0, 2000);
+    // start at 1 since the listener is always index 0
+    for (idx = 1; idx < MAX_FDS; idx++) {
+        if (socketTable.fdTable[idx] == 0) {
+            socketTable.fdTable[idx] = fd;
+            Log::Write(LogLevel_Info, "%s adding socket=%d to table index=%d", __FUNCTION__, fd, idx);
+            return true;
+        }
     }
-     
-    if(read_size == 0) {
-        Log::Write(LogLevel_Info, "Client disconnected");
-        fflush(stdout);
-    } else if(read_size == -1) {
-        Log::Write(LogLevel_Info, "recv failed");
-    }
-         
-    return 0;
+
+    Log::Write(LogLevel_Error, "%s table full could not add socket to table", __FUNCTION__);
+    return false;
 }
 
-//#RASPWAVE
-void openMainListener () {
-    int socket_desc , client_sock , c;
-    struct sockaddr_in server , client;
-     
-    //Create socket
-    socket_desc = socket(AF_INET , SOCK_STREAM , 0);
-    if (socket_desc == -1) {
-       Log::Write(LogLevel_Info, "Could not create socket");
-    }
-    Log::Write(LogLevel_Info,"Socket created");
-     
-    //Prepare the sockaddr_in structure
-    server.sin_family = AF_INET;
-    server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons( 8888 );
-     
-    //Bind
-    if( bind(socket_desc,(struct sockaddr *)&server , sizeof(server)) < 0) {
-        //print the error message
-        Log::Write(LogLevel_Info, "bind failed. Error");
-        return;
-    }
-   Log::Write(LogLevel_Info, "bind done");
-     
-    //Listen
-    listen(socket_desc , 3);
-     
-    //Accept and incoming connection
-   Log::Write(LogLevel_Info, "Waiting for incoming connections...");
-    c = sizeof(struct sockaddr_in);
-     
-     
-    //Accept and incoming connection
-   Log::Write(LogLevel_Info, "Waiting for incoming connections...");
-    c = sizeof(struct sockaddr_in);
-    pthread_t thread_id;
-	
-    while( (client_sock = accept(socket_desc, (struct sockaddr *)&client, (socklen_t*)&c)) ) {
-        Log::Write(LogLevel_Info, "Connection accepted");
-         
-        if( pthread_create( &thread_id , NULL ,  connection_handler , (void*) &client_sock) < 0) {
-            Log::Write(LogLevel_Info, "could not create thread");
+void removeSocketFromTable(int fd)
+{
+    int idx;
+
+    Log::Write(LogLevel_Info, "%s closing connection fd=%d", __FUNCTION__, fd);
+    close(fd);
+
+    // start at 1 since the listener is always index 0
+    for (idx = 1; idx < MAX_FDS; idx++) {
+        if (socketTable.fdTable[idx] == fd) {
+            socketTable.fdTable[idx] = 0;
+            Log::Write(LogLevel_Info, "%s removing socket=%d from table at index=%d", __FUNCTION__, fd, idx);
             return;
         }
-        Log::Write(LogLevel_Info, "Handler assigned");
     }
-     
-    if (client_sock < 0) {
-        Log::Write(LogLevel_Info, "accept failed");
+
+}
+
+void closeAllSockets(void)
+{
+    int idx;
+
+    for (idx = 0; idx < MAX_FDS; idx++) {
+        if (socketTable.fdTable[idx]) {
+            close(socketTable.fdTable[idx]);
+        }
+    }
+}
+
+bool openListenerSocket(void)
+{
+    struct sockaddr_in sock;
+    int                fd;
+   
+    fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
+    if (fd < 0) {
+        Log::Write(LogLevel_Error, "%s cannot create listener socket", __FUNCTION__);
+        return false;
+    }
+
+    sock.sin_family = AF_INET;
+    sock.sin_addr.s_addr = htonl(INADDR_ANY);
+    sock.sin_port = htons(LISTENER_PORT);
+
+    if (bind(fd, (struct sockaddr *)&sock, sizeof(sock)) == -1) {
+        Log::Write(LogLevel_Error, "%s bind failed", __FUNCTION__);
+        close(fd);
+        return false;
+    }
+
+    if (listen(fd, 5) == -1) {
+        Log::Write(LogLevel_Error, "%s listen failed errno=%d", __FUNCTION__, errno);
+        close(fd);
+        return false;
+    }
+
+    socketTable.fdTable[LISTENER_INDEX] = fd;
+   
+    return true;
+
+}
+
+// get sockaddr, IPv4 or IPv6:
+void *get_in_addr(struct sockaddr *sa)
+{
+    if (sa->sa_family == AF_INET) {
+        return &(((struct sockaddr_in*)sa)->sin_addr);
+    }
+
+    return &(((struct sockaddr_in6*)sa)->sin6_addr);
+}
+
+void acceptConnection(fd_set *selectList, int *maxFd)
+{
+    struct sockaddr_storage remoteAddr;
+    socklen_t               len;
+    char                    remoteIP[INET6_ADDRSTRLEN];
+    int                     newFd;  
+
+    len = sizeof(remoteAddr);
+    newFd = accept(socketTable.fdTable[LISTENER_INDEX], 
+	                            (struct sockaddr*) (&remoteAddr), &len);
+    if (newFd == -1) {
+        Log::Write(LogLevel_Error, "%s accept connection failed", __FUNCTION__);
         return;
+    }     
+     
+    // if the clients don't close, we don't want to accept another connection
+    if (addSocketToTable(newFd) == false) {
+        Log::Write(LogLevel_Error, "%s cannot accept connection, table full", __FUNCTION__);
+        close(newFd);
+        return;
+    }
+    
+    // add accepted connection to master list
+    FD_SET(newFd, selectList);
+    // keep track of the max FD number
+    if (newFd > *maxFd) {
+        *maxFd = newFd;
+    }
+    
+    inet_ntop(remoteAddr.ss_family, get_in_addr((struct sockaddr*)&remoteAddr), remoteIP, INET6_ADDRSTRLEN);
+
+    Log::Write(LogLevel_Info, "selectserver: new connection from %s on socket %d", remoteIP, newFd);
+}
+
+void *handlePacket(void *arg)
+{
+    packetData_t *msg;
+    int nodeid = 0;
+    int commandclass = 0;
+    char* command = NULL;
+    char* value = NULL;
+
+    msg = (packetData_t*)arg;
+
+    Log::Write(LogLevel_Info, "recv data fd=%d:[%s]", msg->fd, msg->data);
+    char *saveptr;
+    char* ch = strtok_r(msg->data, ",", &saveptr);
+    int i = 0;
+    while (ch != NULL) {
+        if (i == 0) {
+            command = strdup(ch);
+        }
+        if (i == 1) {
+            nodeid = atoi(ch);
+        }
+        if (i == 2) {
+            commandclass = atoi(ch);
+        }
+        if (i == 3) {
+            value = strdup(ch);
+        }
+        ch = strtok_r(NULL, ",", &saveptr);
+        i++;
+    }
+
+    Log::Write(LogLevel_Info, "%s %d %d %s", command, nodeid, commandclass, value);
+    int retVal = 0;
+    if (strcasecmp("setboolvalue", command) == 0) {
+        if( !strcasecmp( "true", value) ) {
+            retVal = SetBoolValue(nodeid, commandclass, true);
+        } else if( !strcasecmp( "false", value ) ) {
+            retVal = SetBoolValue(nodeid, commandclass, false);
+        } else {
+            retVal = SetBoolValue(nodeid, commandclass, false);
+        }
+    } else {
+        Log::Write(LogLevel_Error, "Unknown command: %s", command);
+    }
+
+    char ret[10] = {0};
+    sprintf(ret, "%d", retVal);
+
+    // just send some data back
+    if (send(msg->fd, &ret, 10, 0) == -1) {
+        Log::Write(LogLevel_Error, "send failed");
+    }
+
+    free(command);
+    free(value);
+    free(msg);
+
+    return NULL;
+}
+
+void readDataOnConnection(int fd, fd_set *selectList)
+{
+    int             nbytes;
+    pthread_t       threadId;
+    packetData_t    *msg;
+
+    msg = (packetData_t*)malloc(sizeof(packetData_t));
+
+    memset(msg, 0, sizeof(packetData_t));
+    nbytes = recv(fd, msg->data, MAX_PACKET_DATA-1, 0);
+
+    if (nbytes <= 0) {
+        if (nbytes == 0) {
+            Log::Write(LogLevel_Info, "%s client closed connection", __FUNCTION__);
+        } else {
+            Log::Write(LogLevel_Error, "%s recv returned error", __FUNCTION__);
+        }
+        // remove socket from select list
+        FD_CLR(fd, selectList);
+        // this will also close the socket
+        removeSocketFromTable(fd);
+        return;
+    }
+
+    // null terminate
+    msg->data[nbytes] = 0;
+    msg->bytes = nbytes;
+    msg->fd = fd;
+
+    if (pthread_create(&threadId, NULL, handlePacket, (void*)msg) != 0) {
+        Log::Write(LogLevel_Error, "%s could not create handlePacket thread", __FUNCTION__);
+        free(msg);
+    } else {
+        pthread_detach(threadId);
+    }
+
+}
+
+void *threadReadSocket(void *arg)
+{
+    fd_set                  localList;
+    fd_set                  masterList;
+    int                     maxFd = 0, i;
+  
+    memset(&socketTable, 0, sizeof(socketTable_t));
+
+    if (openListenerSocket() == false) {
+        printf("exiting cannot open listener socket");
+        Log::Write(LogLevel_Error, "exiting cannot open listener socket");
+        pthread_exit(0);
+    }
+
+    // open sockets for selecting
+    FD_ZERO(&localList);
+    FD_ZERO(&masterList);
+    // add listener socket into master select list
+    FD_SET(socketTable.fdTable[LISTENER_INDEX], &masterList);
+    maxFd = socketTable.fdTable[LISTENER_INDEX];
+
+    printf("listening for connections ...\n");
+    Log::Write(LogLevel_Info, "listening for connections ...");
+
+    while(1) {
+        // copy the master, we do this since select changes the set 
+        localList = masterList;
+        if (select(maxFd+1, &localList, NULL, NULL, NULL) == -1) {
+            Log::Write(LogLevel_Error, "%s select returned error", __FUNCTION__);
+	    //closeAllSockets();
+	    pthread_exit(0);
+        }
+    
+        for(i = 0; i <= maxFd; i++) {
+            if (FD_ISSET(i, &localList)) {     
+                // check listener first
+                if (i == socketTable.fdTable[LISTENER_INDEX]) {
+                    acceptConnection(&masterList, &maxFd);
+                } else {
+                     // got some data
+                     readDataOnConnection(i, &masterList);
+                    
+                }
+            }
+        }
     }
 }
 
@@ -608,6 +824,12 @@ int main( int argc, char* argv[] )
 			}
 		}
 		pthread_mutex_unlock( &g_criticalSection );
+
+                pthread_t handle;
+                if (pthread_create(&handle, NULL, &threadReadSocket, NULL) != 0) {
+                    perror("couldn't create sock thread\n");
+                    return(1);
+                }
 
 		// If we want to access our NodeInfo list, that has been built from all the
 		// notification callbacks we received from the library, we have to do so

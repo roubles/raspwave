@@ -2479,6 +2479,7 @@ bool Manager::SetValue
 		{
 			driver->LockNodes();
 
+                        printf("type is %d\n", _id.GetType());
 			switch( _id.GetType() )
 			{
 				case ValueID::ValueType_Bool:

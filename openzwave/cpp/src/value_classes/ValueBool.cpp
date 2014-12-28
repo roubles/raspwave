@@ -67,6 +67,7 @@ bool ValueBool::SetFromString
 	string const& _value
 )
 {
+        printf("Setting value to %s", _value.c_str());
 	if ( !strcasecmp( "true", _value.c_str() ) ) {
 		return Set( true );
 	}
