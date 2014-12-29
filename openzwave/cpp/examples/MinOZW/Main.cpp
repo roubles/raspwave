@@ -127,93 +127,6 @@ NodeInfo* GetNodeInfo
 	return NULL;
 }
 
-// #RASPWAVE
-void* callRobot(void * p) {
-    RobotCall* rc = (RobotCall*) p;
-
-    char cmd[200] = {0};
-    sprintf(cmd, "/usr/local/bin/raspscpt %s %d %d %d", rc->pathToRobot, rc->notificationData.nodeId, rc->notificationData.event, rc->notificationData.commandClassId);
-    system(cmd);
-    Log::Write(LogLevel_Info, rc->notificationData.nodeId, cmd);
-
-    // Free up stuff
-    delete rc;
-    pthread_exit(NULL);
-}
-
-// #RASPWAVE
-bool hasEnding (std::string const &fullString, std::string const &ending)
-{
-    if (fullString.length() >= ending.length()) {
-        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
-    } else {
-        return false;
-    }
-}
-
-// #RASPWAVE
-void callRobotsAtPath (string path, NotificationData* nd) {
-    DIR *dir;
-    struct dirent *ent;
-    if ((dir = opendir (path.c_str())) != NULL) {
-        /* print all the files and directories within directory */
-        while ((ent = readdir (dir)) != NULL) {
-            if (strcmp(ent->d_name, ".") == 0) {
-                continue;
-            }
-            if (strcmp(ent->d_name, "..") == 0) {
-                continue;
-            } 
-            if (strcmp(ent->d_name, "RobotUtils.py") == 0) {
-                continue;
-            } 
-            if (hasEnding(ent->d_name, ".py") == false) {
-                Log::Write(LogLevel_Info,"Skiping non python robot file: %s\n", ent->d_name);
-                continue;
-            }
-            char *fullpath = (char*)malloc(strlen(path.c_str()) + strlen(ent->d_name) + 2);
-            sprintf(fullpath, "%s/%s", path.c_str(), ent->d_name);
-
-            // Build RobotCall
-            RobotCall* rc = new RobotCall();
-            rc->notificationData.nodeId = nd->nodeId;
-            rc->notificationData.event = nd->event;
-            rc->notificationData.commandClassId = nd->commandClassId;
-            strcpy(rc->pathToRobot, fullpath);
-
-            pthread_t threadId;
-            pthread_create(&threadId, NULL, callRobot, (void*)rc);
-
-            delete fullpath;
-        }
-        closedir (dir);
-    } else {
-        /* could not open directory */
-        Log::Write(LogLevel_Info, "Folder does not exist: %s\n", path.c_str());
-    }
-}
-
-// #RASPWAVE
-void callUserHomeRobots (NotificationData* nd) {
-    callRobotsAtPath("~/.raspwave/robots", nd);
-}
-
-// #RASPWAVE
-void callEtcRobots (NotificationData* nd) {
-    callRobotsAtPath("/etc/raspwave/robots", nd);
-}
-
-// #RASPWAVE
-void* callAllRobots(void * p) {
-    NotificationData* nd = (NotificationData*) p;
-
-    callEtcRobots(nd);
-    callUserHomeRobots(nd);
-
-    delete nd;
-    pthread_exit(NULL);
-}
-
 int SetBoolValue(int nodeid, int commandclass, bool value)
 {
     bool res;
@@ -520,6 +433,52 @@ void* postNotification(void * p) {
     pthread_exit(NULL);
 }
 
+void* executeCommand(void * p) {
+    char* cmd = (char*) p;
+
+    Log::Write(LogLevel_Info, "Executing command[%s]", cmd);
+    system(cmd);
+
+    delete cmd
+    pthread_exit(NULL);
+}
+
+void notifyRaspwave (Notification const* _notification) {
+    ValueID valueId = _notification->GetValueID();
+
+    bool send = false;
+    char cmd[200] = {0};
+    switch( _notification->GetType() ) 
+    {
+        case Notification::Type_ValueChanged:
+        {
+            string value;
+            Manager::Get()->GetValueAsString(valueId, &value);
+
+            sprintf(cmd, "/etc/raspwave/pylib/postValueNotification.py %d %d %llu %s", 
+                    valueId.GetNodeId(),
+                    valueId.GetCommandClassId(),
+                    valueId.GetId(),
+                    value.c_str());
+            send = true;
+            break;
+        }
+        case Notification::Type_NodeEvent:
+        {
+            sprintf(cmd, "/etc/raspwave/pylib/postNodeEventNotification.py %d %d %llu %d", 
+                    valueId.GetNodeId(),
+                    valueId.GetCommandClassId(),
+                    valueId.GetId(),
+                    _notification->GetEvent());
+            send = true;
+            break;
+        }
+    }
+    if (send == true) {
+        pthread_t threadId;
+        pthread_create(&threadId, NULL, executeCommand, (void*)strdup(cmd));
+    } 
+}
 void notifyEvent (Notification const* _notification) {
     // Build NotificationData
     ValueID valueId = _notification->GetValueID();
@@ -624,7 +583,8 @@ void OnNotification
 
 		case Notification::Type_ValueChanged:
 		{
-                        notifyValue(_notification);
+                        // #RASPWAVE
+                        notifyRaspwave(_notification);
 			break;
 		}
 
@@ -673,7 +633,7 @@ void OnNotification
 		case Notification::Type_NodeEvent:
 		{
                         // #RASPWAVE
-                        notifyEvent(_notification);
+                        notifyRaspwave(_notification);
 			break;
 		}
 

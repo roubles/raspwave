@@ -2,24 +2,31 @@
 # @author rouble matta
 
 import sys
-import logging
-from RobotUtils import sendEmail, getNodeName, readStringValue
-from NotificationHandler import Notification,getNodeReport
+from RobotUtils import sendEmail
+from SecurityUtils import getCurrentAlarmState
+from ConfUtils import getNodeName
+from Notification import *
+from NotificationHandler import getNotificationFromNodeById
+from LoggerUtils import setupRobotLogger
 
 logger = setupRobotLogger()
 
 # Always send an email, regardless of armed state
-def EmailAlertAlways(id, state, time):
-    name = getNodeName(id)
-    alarm_state = getCurrentAlarmState()
-    if (state == "open"):
-        sendEmail(logger, ["rouble@gmail.com"],  "[" + alarm_state + "] " + name + " is open at " + time, getNodeReport(logger, id));
-    elif (state == "close") :
-        sendEmail(logger, ["rouble@gmail.com"], "[" + alarm_state + "] " + name + " is closed at " + time, getNodeReport(logger,id));
+def EmailAlertAlways(nodeId, current, previous):
+    name = getNodeName(nodeId)
+    alarmState = getCurrentAlarmState()
+    if (current.value == "on"):
+        sendEmail(["rouble@gmail.com"],  "[" + str(alarmState) + "] " + str(name) + " is open at " + str(current.time), "hello");
+        pass
+    elif (current.value == "off") :
+        sendEmail(["rouble@gmail.com"], "[" + str(alarmState) + "] " + str(name) + " is closed at " + str(current.time), "hello");
+        pass
 
-def main(*args):
-    EmailAlertAlways(args[1], args[2], args[7])
+def crux(*args):
+    current = getNotificationFromNodeById(args[1], args[2])
+    previous = getNotificationFromNodeById(args[1], args[3])
+    EmailAlertAlways(args[1], current, previous)
     return 0
 
 if __name__=='__main__':
-    sys.exit(main(*sys.argv))
+    sys.exit(crux(*sys.argv))
