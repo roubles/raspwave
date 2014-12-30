@@ -6,6 +6,7 @@ import os
 def isTestEnvironment():
     try:
         if os.environ['TEST_RASPWAVE'] is not "":
+            print "Is test environment!"
             return True
         else:
             return False

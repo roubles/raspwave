@@ -4,7 +4,7 @@
 import sys
 from RobotUtils import sendEmail, robotSleep
 from SecurityUtils import getCurrentAlarmState,getAlarmStateDelayForNode,panic
-from ConfUtils import getNodeName
+from ConfUtils import getNodeName,getMailto,isDoorWindowOrMotion
 from Notification import *
 from NotificationHandler import getNotificationFromNodeById
 from LoggerUtils import setupRobotLogger
@@ -12,7 +12,7 @@ from SensorUtils import getSensorState
 
 logger = setupRobotLogger()
 
-mailto = ["rouble@gmail.com"]
+mailto = getMailto()
 
 def AlertIfArmed(nodeId, current, previous):
     name = getNodeName(nodeId)
@@ -35,6 +35,8 @@ def AlertIfArmed(nodeId, current, previous):
             logger.info("Alarm disarmed in time!")
 
 def crux(*args):
+    if not isDoorWindowOrMotion(args[1]):
+        return 1
     current = getNotificationFromNodeById(args[1], args[2])
     previous = getNotificationFromNodeById(args[1], args[3])
     AlertIfArmed(args[1], current, previous)

@@ -40,6 +40,15 @@ class BatteryValueNotification(Notification):
     def __str__ (self):
         return self.type + " nid[" + str(self.nid) + "], nodeId=[" + str(self.nodeId) + "], value=[" + str(self.value) + "], commandClass=[" + str(self.commandClass) + "], fullHex=[" + str(self.fullHex) + "], time=[" + str(self.time) + "], ignore=[" + str(self.ignore) + "]"
 
+class WakeupNotification(Notification):
+    def __init__ (self, nodeId, commandClass, fullHex, value):
+        Notification.__init__(self, nodeId, commandClass, fullHex)
+        self.value = value
+        self.type = "WakeupNotification"
+
+    def __str__ (self):
+        return self.type + " nid[" + str(self.nid) + "], nodeId=[" + str(self.nodeId) + "], value=[" + str(self.value) + "], commandClass=[" + str(self.commandClass) + "], fullHex=[" + str(self.fullHex) + "], time=[" + str(self.time) + "], ignore=[" + str(self.ignore) + "]"
+
 class NodeEventNotification(ValueNotification):
     def __init__ (self, nodeId, commandClass, fullHex, event):
         Notification.__init__(self, nodeId, commandClass, fullHex)

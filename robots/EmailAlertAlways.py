@@ -4,7 +4,7 @@
 import sys
 from RobotUtils import sendEmail
 from SecurityUtils import getCurrentAlarmState
-from ConfUtils import getNodeName
+from ConfUtils import getNodeName,getMailto,isDoorWindowOrMotion
 from Notification import *
 from NotificationHandler import getNotificationFromNodeById,getNodeReport
 from LoggerUtils import setupRobotLogger
@@ -12,7 +12,7 @@ from Utils import getTimeElapsed_HHMMSS
 from SensorUtils import getSensorState
 
 logger = setupRobotLogger()
-mailto = ["rouble@gmail.com"]
+mailto = getMailto()
 
 # Always send an email, regardless of armed state
 def EmailAlertAlways(nodeId, current, previous):
@@ -26,6 +26,8 @@ def EmailAlertAlways(nodeId, current, previous):
     sendEmail(mailto, subject, body);
 
 def crux(*args):
+    if not isDoorWindowOrMotion(args[1]):
+        return 1
     current = getNotificationFromNodeById(args[1], args[2])
     previous = getNotificationFromNodeById(args[1], args[3])
     EmailAlertAlways(args[1], current, previous)

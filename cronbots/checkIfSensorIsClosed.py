@@ -3,18 +3,19 @@
 import datetime
 from NotificationHandler import getEarliestNotificationOfCurrentState,getNodeReport
 from LoggerUtils import setupCronbotLogger
-from ConfUtils import getNodeName,getNodes
+from ConfUtils import getNodeName,getNodes,getMailto,isDoorWindowOrMotion
 from Utils import convert_timedelta_str
 from RobotUtils import sendEmail
 
 logger = setupCronbotLogger()
 
-mailto = ["rouble@gmail.com"]
+mailto = getMailto()
 maxCloseTimeInSeconds = 28440
 now = datetime.datetime.now()
 
 for node in getNodes():
-    #TODO: if node type is door window sensor
+    if not isDoorWindowOrMotion(node):
+        continue
     name = getNodeName(node)
     logger.info("Testing node: " + node + ":" + name)
 

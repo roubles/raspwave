@@ -4,7 +4,7 @@
 import ConfigParser
 import datetime
 from CacheUtils import readStringValue, writeStringValue
-from ConfUtils import getConfValue
+from ConfUtils import getConfValue,getMailto
 from LoggerUtils import setupSecurityLogger
 from RobotUtils import sendEmail
 from NotificationHandler import getNodeReport
@@ -15,7 +15,7 @@ alarmCodeKey  = "ALARM_CODE"
 
 logger = setupSecurityLogger()
 
-mailto = ["rouble@gmail.com"]
+mailto = getMailto()
 AlarmState = ["ARMED", "NOMOTION", "NOWAIT", "NOMOTIONNOWAIT", "DISARMED"]
 
 def panic (nodeId = None, info = None, siren = True):

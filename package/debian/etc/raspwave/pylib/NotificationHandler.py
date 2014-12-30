@@ -136,7 +136,9 @@ class NotificationListener(threading.Thread):
             self.s.bind((HOST, self.PORT))
         except socket.error as msg:
             logger.info( 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
+            print( 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
             return
+        print( 'Socket bind complete')
         logger.info( 'Socket bind complete')
 
         #Start listening on socket
@@ -311,7 +313,12 @@ class NotificationHandler:
                     break
         return notification
     def getLatestNotificationFromNode (self, nodeId):
-        return self.getNotificationFromNodeByIndex(nodeId, 0)
+        notification = self.getNotificationFromNodeByIndex(nodeId, 0)
+        i = 1
+        while (notification is not None) and (notification.ignore is True) and (i < self.maxNotifcationsPerNode):
+            notification = self.getNotificationFromNodeByIndex(nodeId, i)
+            i += 1
+        return notification
     def getAllNotificationsFromNode(self, nodeId):
         nodeIdStr = str(nodeId)
         ncb = self.shelf.get(nodeIdStr, None)
