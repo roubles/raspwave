@@ -46,6 +46,8 @@
 #include "value_classes/ValueStore.h"
 #include "value_classes/Value.h"
 #include "value_classes/ValueBool.h"
+#include "command_classes/Battery.h"
+#include "command_classes/Wakeup.h"
 #include "command_classes/SensorBinary.h"
 #include "command_classes/SwitchBinary.h"
 #include "platform/Log.h"
@@ -447,22 +449,32 @@ void* executeCommand(void * p) {
 void notifyRaspwave (Notification const* _notification) {
     ValueID valueId = _notification->GetValueID();
     int commandclass = valueId.GetCommandClassId();
+    char* notificationCmd = null;
+    static char* controlNotificationCmd = "postValueNotification";
+    static char* batteryNotificationCmd = "postBatteryValueNotification";
+    static char* wakeupNotificationCmd = "postValueNotification";
 
     bool send = false;
-    char cmd[200] = {0};
+    char *cmd[200] = (char*) malloc (200);
     switch( _notification->GetType() ) 
     {
         case Notification::Type_ValueChanged:
         {
-            if ((commandclass != SensorBinary::StaticGetCommandClassId()) &&
-                (commandclass != SwitchBinary::StaticGetCommandClassId())) {
+            if ((commandclass == SensorBinary::StaticGetCommandClassId()) || (commandclass == SwitchBinary::StaticGetCommandClassId())) {
+                notificationCmd = postValueNotification;
+            } else if (commandclass == Battery::StaticGetCommandClassId()) {
+                notificationCmd = batteryNotificationCmd;
+            } else if (commandclass == Wakeup::StaticGetCommandClassId()) {
+                notificationCmd = wakeupNotificationCmd;
+            } else {
                 Log::Write(LogLevel_Info,"Ignoring notification because it is of command class: %d", commandclass);
                 return;
-            }
+            } 
             string value;
             Manager::Get()->GetValueAsString(valueId, &value);
 
-            sprintf(cmd, "/etc/raspwave/pylib/sendMsg.py postValueNotification %d %d %llu %s", 
+            sprintf(cmd, "/etc/raspwave/pylib/sendMsg.py %s %d %d %llu %s", 
+                    notificationCmd
                     valueId.GetNodeId(),
                     commandclass,
                     valueId.GetId(),
@@ -486,7 +498,7 @@ void notifyRaspwave (Notification const* _notification) {
     }
     if (send == true) {
         pthread_t threadId;
-        pthread_create(&threadId, NULL, executeCommand, (void*)strdup(cmd));
+        pthread_create(&threadId, NULL, executeCommand, (void*)cmd);
     } 
 }
 void notifyEvent (Notification const* _notification) {
