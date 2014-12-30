@@ -20,12 +20,12 @@ from EnvUtils import isTestEnvironment
 logger = None
 
 usrHomeFolder = '~/.raspwave/robots'
-if isTestEnvironment:
+if isTestEnvironment():
     raspscptLocation = '~/raspwave/sh/raspscpt'
     etcFolder = '~/raspwave/robots'
     shelfLocation = '~/raspwave/db/nh.shelf'
 else:
-    raspscptLocation = '/etc/raspwave/sh/raspscpt'
+    raspscptLocation = '/usr/local/bin/raspscpt'
     etcFolder = '/etc/raspwave/robots'
     shelfLocation = '/etc/raspwave/db/nh.shelf'
 
@@ -39,16 +39,13 @@ class NodeControlBlock:
 class RobotLauncher(threading.Thread):
     def __init__ (self, current, previous):
         super(RobotLauncher, self).__init__()
-        self.ignoreSeconds = 5
         self.current = current
         self.previous = previous
     def launchRobots(self, folder, current, previous):
         logger.info("Launching all robots in folder: " + folder)
-        logger.info("Payload: " + current.nodeId + " " + current.nid + " " + (previous.nid if previous else ""))
         folder = get_absolute_path(folder)
         if os.path.isdir(folder):
             for filename in os.listdir(folder):
-                logger.info("file name is " + filename);
                 if filename.endswith(".py"):
                     raspscpt = get_absolute_path(raspscptLocation)
                     cmd = raspscpt + " " + folder + '/' + filename + " " + current.nodeId + " " + current.nid + " " + (previous.nid if previous else "")
@@ -66,17 +63,7 @@ class RobotLauncher(threading.Thread):
         self.launchUsrHomeRobots(current, previous)
     def run(self):
         logger.info("Starting robot launcher thread: " + self.name)
-        currentSecondsSinceEpoch = time.mktime(self.current.time.timetuple())
-        if self.previous:
-            previousSecondsSinceEpoch = time.mktime(self.previous.time.timetuple())
-            diff = currentSecondsSinceEpoch - previousSecondsSinceEpoch
-            logger.info("Last notification arrived " + str(diff) + " seconds ago")
-            if (diff <= self.ignoreSeconds):
-                if (self.current.value == self.previous.value) :
-                    logger.info("Ignoring notification: " + str(self.current) + " since previous notification with same value came " + str(diff) + " seconds ago.")
-                    self.current.ignore = True
-        if self.current.ignore == False:
-            self.launchAllRobots(self.current, self.previous)
+        self.launchAllRobots(self.current, self.previous)
         logger.info("Stopping robot launcher thread: " + self.name)
 
 class ClientListener(threading.Thread):
@@ -105,14 +92,23 @@ class ClientListener(threading.Thread):
                 if dataList[0] == "getNotificationFromNodeByIndex":
                     n = self.nh.getNotificationFromNodeByIndex(dataList[1], dataList[2])
                     reply = pickle.dumps(n)
+                if dataList[0] == "getEarliestNotificationOfCurrentState":
+                    n = self.nh.getEarliestNotificationOfCurrentState(dataList[1])
+                    reply = pickle.dumps(n)
                 if dataList[0] == "getNotificationFromNodeById":
                     n = self.nh.getNotificationFromNodeById(dataList[1], dataList[2])
                     logger.info("Got notification by ID: " + str(n))
                     reply = pickle.dumps(n)
+                if dataList[0] == "getNodeReport":
+                    reply = self.nh.getNodeReport(dataList[1])
+                    # This can get rather large.
+                    logger.info("Got Node Report " + str(reply))
                 if dataList[0] == "die":
                     self.nl.stop()
                 if dataList[0] == "dump":
-                    self.nh.dump()
+                    report = self.nh.dump()
+                    # We do not send this back over tcp
+                    logger.info(report)
             else:
                 logger.info("Got no data")
         finally:
@@ -183,49 +179,100 @@ class NotificationListener(threading.Thread):
 
 class NotificationHandler:
     def __init__ (self):
+        self.lock = threading.RLock() 
         self.PORT = 55555
-        self.maxNotifcationsPerNode = 15
+        self.ignoreSeconds = 5
+        self.maxNotifcationsPerNode = 20
         self.shelf = shelve.open(get_absolute_path(shelfLocation))
         self.mainNotificationListenerThread = None
         self.robotLaunchers = []
     def dump(self):
-        for key in self.shelf.keys():
-            logger.info("Node ID: " + key)
-            ncb = self.shelf.get(key, None)
+        report = ""
+        with self.lock:
+            for key in self.shelf.keys():
+                ncb = self.shelf.get(key, None)
+                if ncb is not None:
+                    report += "Node ID: " + key + "\n"
+                    report += "  Battery level: " + str(ncb.batteryValue) + "\n"
+                    report += "  Last Wakeup Time: " + str(ncb.lastWakeupTime) + "\n"
+                    report += "  Notifications:\n"
+                    for notification in ncb.notifications:
+                        report += "    " + str(notification) + "\n"
+        return report
+    def getNodeReport(self, nodeId):
+        report = ""
+        with self.lock:
+            ncb = self.shelf.get(nodeId, None)
             if ncb is not None:
-                l = ncb.notifications
-                for notification in l:
-                    logger.info("    " + str(notification))
+                report += "Node ID: " + nodeId + "\n"
+                report += "  Battery level: " + str(ncb.batteryValue) + "\n"
+                report += "  Last Wakeup Time: " + str(ncb.lastWakeupTime) + "\n"
+                report += "  Notifications:\n"
+                for notification in ncb.notifications:
+                    report += "    " + str(notification) + "\n"
+        return report 
     def postBatteryValueNotification (self, nodeId, commandClass, fullHex, value):
         notification = BatteryValueNotification(nodeId, commandClass, fullHex, value)
+        logger.info("Created " + str(notification))
         self.postNotification(nodeId, notification)
     def postValueNotification (self, nodeId, commandClass, fullHex, value):
         notification = ValueNotification(nodeId, commandClass, fullHex, value)
+        logger.info("Created " + str(notification))
         self.postNotification(nodeId, notification)
     def postValueChangeNotification (self, nodeId, commandClass, fullHex, value, previousValue):
         notification = ValueChangeNotification(nodeId, commandClass, fullHex, value, previousValue)
+        logger.info("Created " + str(notification))
         self.postNotification(nodeId, notification)
     def postNodeEventNotification (self, nodeId, commandClass, fullHex, event):
         notification = NodeEventNotification(nodeId, commandClass, fullHex, event)
+        logger.info("Created " + str(notification))
         self.postNotification(nodeId, notification)
     def postNotification (self, nodeId, notification):
-        #TODO: make this syncrnoized
-        nodeIdStr = str(nodeId)
-        previous = self.getLatestNotificationFromNode (nodeIdStr)
+        with self.lock:
+            #Critical Section
+            nodeIdStr = str(nodeId)
+            previous = self.getLatestNotificationFromNode (nodeIdStr)
+            logger.info("Got latest notification to be: " + str(previous))
 
-        ncb = self.shelf.get(nodeIdStr, NodeControlBlock(nodeIdStr))
-        l = ncb.notifications
-        # Truncate list to maxNotifcationsPerNode size
-        l.insert(0,notification)
-        if len(l)>self.maxNotifcationsPerNode:
-            l = l[:self.maxNotifcationsPerNode]
-        logger.info("List is: " + str(l))
-        self.shelf[nodeIdStr] = ncb
+            if previous is not None:
+                diff = notification.time - previous.time
+                diffSeconds = diff.total_seconds()
+                logger.info("Last notification arrived " + str(diffSeconds) + " seconds ago")
 
-        r = RobotLauncher(notification, previous)
-        r.daemon = True
-        r.start()
-        self.robotLaunchers.append(r)
+                if (diffSeconds <= self.ignoreSeconds):
+                    if (notification.value == previous.value) :
+                        logger.info("Ignoring notification: " + str(notification.nid) + " since previous notification with same value came " + str(diffSeconds) + " seconds ago.")
+                        notification.ignore = True
+
+                if notification.value == 'False':
+                    if previous.value == 'False':
+                        # If a sensor is closed, and it is still closed, we
+                        # do not really care about it.
+                        # However, if a sensor is open, we care about it no
+                        # matter what the previous state was.
+                        logger.info("Ignoring notification: " + str(notification.nid) + " since previous notification was false and current notification is false")
+                        notification.ignore = True
+            else:
+                logger.info("Making a dummy previous")
+                previous = ValueNotification(notification.nodeId, notification.commandClass, notification.fullHex, "False")
+                previous.time = datetime(1970, 1, 1)
+
+            ncb = self.shelf.get(nodeIdStr, NodeControlBlock(nodeIdStr))
+            l = ncb.notifications
+            # Truncate list to maxNotifcationsPerNode size
+            l.insert(0,notification)
+            if len(l)>self.maxNotifcationsPerNode:
+                ncb.notifications = l[:self.maxNotifcationsPerNode]
+            self.shelf[nodeIdStr] = ncb
+            self.shelf.sync()
+            #End critical section
+        # The following code cannot be in the critical section, because it
+        # dump and getNodeReport (or any robot apis) can lock.
+        if notification.ignore is False:
+            r = RobotLauncher(notification, previous)
+            r.daemon = True
+            r.start()
+            self.robotLaunchers.append(r)
     def getNotificationFromNodeByIndex (self, nodeId, index):
         indexInt = int(index)
         nodeIdStr = str(nodeId)
@@ -253,6 +300,16 @@ class NotificationHandler:
                     logger.info("Found notification: " + str(notification))
                     return notification
             return None
+    def getEarliestNotificationOfCurrentState (self, nodeId):
+        notification = self.getNotificationFromNodeByIndex(nodeId, 0)
+        if notification is not None:
+            for i in range(1, self.maxNotifcationsPerNode): 
+                n = self.getNotificationFromNodeByIndex(nodeId, i)
+                if n and n.value == notification.value:
+                    notification = n
+                else:
+                    break
+        return notification
     def getLatestNotificationFromNode (self, nodeId):
         return self.getNotificationFromNodeByIndex(nodeId, 0)
     def getAllNotificationsFromNode(self, nodeId):
@@ -310,7 +367,20 @@ def getLatestNotification(nodeId, logger=getNotificationHandlerLogger()):
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(('localhost', 55555))
-        msg = "getNotificationaFromNodeByIndex," + str(nodeId) + ",0"
+        msg = "getNotificationFromNodeByIndex," + str(nodeId) + ",0"
+        logger.info("sending msg: " + msg)
+        s.send(msg)
+        n = s.recv(1024)
+        return pickle.loads(n)
+    finally:
+        s.close()
+
+def getEarliestNotificationOfCurrentState(nodeId, logger=getNotificationHandlerLogger()):
+    s = None
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(('localhost', 55555))
+        msg = "getEarliestNotificationOfCurrentState," + str(nodeId)
         logger.info("sending msg: " + msg)
         s.send(msg)
         n = s.recv(1024)
@@ -319,16 +389,17 @@ def getLatestNotification(nodeId, logger=getNotificationHandlerLogger()):
         s.close()
 
 def getNodeReport(nodeId, logger=getNotificationHandlerLogger()):
-    report = ""
-    i = 0
-    while True:
-        n = getNotificationaFromNodeByIndex(logger, nodeId, i)
-        if n is not None:
-            report += str(n) + "\n"
-        else:
-            break
-        i = i + 1
-    return report 
+    s = None
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(('localhost', 55555))
+        msg = "getNodeReport," + str(nodeId)
+        logger.info("sending msg: " + msg)
+        s.send(msg)
+        report = s.recv(10240)
+        return report 
+    finally:
+        s.close()
 
 def sendMsg (*args):
     s = None

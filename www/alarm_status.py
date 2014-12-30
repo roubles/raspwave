@@ -4,6 +4,7 @@
 import sys
 sys.path.append('/etc/raspwave/pylib')
 from SecurityUtils import getCurrentAlarmState
+from LoggerUtils import setupSecurityLogger
 import cgi, cgitb
 cgitb.enable()
 

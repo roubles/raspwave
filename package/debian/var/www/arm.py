@@ -3,13 +3,26 @@
 
 import sys
 sys.path.append('/etc/raspwave/pylib')
-from RobotUtils import writeStringValue, readStringValue
+from SecurityUtils import setAlarmState, getCurrentAlarmState
+from LoggerUtils import setupSecurityLogger
 import cgi, cgitb
 cgitb.enable()
 
-writeStringValue("STATE", "ARMED")
-state = str(readStringValue("STATE"))
-print "STATE: " + state
+logger = setupSecurityLogger()
+
+specificArmedState = "ARMED"
+arguments = cgi.FieldStorage()
+if "state" in arguments:
+    specificArmedState = arguments["state"].value.upper()
+
+alarmState = getCurrentAlarmState()
+logger.info("Arming! Current state is: " + alarmState)
 
 print "Content-type: text/html\n\n"
-print "<html><body> Alarm STATE is " + state + "</body></html>"
+try:
+    setAlarmState(specificArmedState)
+    alarmState = getCurrentAlarmState()
+    logger.info("Alarm state has been updated to: " + alarmState)
+    print "<html><body> Alarm STATE is " + alarmState + " </body></html>"
+except:
+    print "<html><body> Invalid alarm state: " + specificArmedState + " </body></html>"

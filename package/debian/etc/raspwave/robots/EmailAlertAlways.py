@@ -2,25 +2,34 @@
 # @author rouble matta
 
 import sys
-import logging
-from RobotUtils import sendEmail, getNodeName, readStringValue
-from NotificationHandler import Notification,getNodeReport,setupLogger
+from RobotUtils import sendEmail
+from SecurityUtils import getCurrentAlarmState
+from ConfUtils import getNodeName
+from Notification import *
+from NotificationHandler import getNotificationFromNodeById,getNodeReport
+from LoggerUtils import setupRobotLogger
+from Utils import getTimeElapsed_HHMMSS
+from SensorUtils import getSensorState
 
-setupLogger("robots", "/var/log/raspwave/robots.log", True, False)
-logger = logging.getLogger("robots")
+logger = setupRobotLogger()
+mailto = ["rouble@gmail.com"]
 
 # Always send an email, regardless of armed state
-def processSignalOnSensor(id, state, time):
-    name = getNodeName(id)
-    alarm_state = str(readStringValue("STATE"))
-    if (state == "open"):
-        sendEmail(logger, ["rouble@gmail.com"],  "[" + alarm_state + "] " + name + " is open at " + time, getNodeReport(logger, id));
-    elif (state == "close") :
-        sendEmail(logger, ["rouble@gmail.com"], "[" + alarm_state + "] " + name + " is closed at " + time, getNodeReport(logger,id));
+def EmailAlertAlways(nodeId, current, previous):
+    name = getNodeName(nodeId)
+    alarmState = getCurrentAlarmState()
+    subject = "[" + str(alarmState) + "] " + str(name) + " is " + getSensorState(current.value) + " at " + str(current.time)
+    body = "Door had been " + getSensorState(previous.value) + " for " + getTimeElapsed_HHMMSS(previous.time) + "\n\n"
+    body += "Current: " + str(current) + "\n"
+    body += "Previous: " + str(previous) + "\n"
+    body += getNodeReport(nodeId)
+    sendEmail(mailto, subject, body);
 
-def main(*args):
-    processSignalOnSensor(args[1], args[2], args[7])
+def crux(*args):
+    current = getNotificationFromNodeById(args[1], args[2])
+    previous = getNotificationFromNodeById(args[1], args[3])
+    EmailAlertAlways(args[1], current, previous)
     return 0
 
 if __name__=='__main__':
-    sys.exit(main(*sys.argv))
+    sys.exit(crux(*sys.argv))

@@ -6,21 +6,24 @@ from RobotUtils import sendEmail
 from SecurityUtils import getCurrentAlarmState
 from ConfUtils import getNodeName
 from Notification import *
-from NotificationHandler import getNotificationFromNodeById
+from NotificationHandler import getNotificationFromNodeById,getNodeReport
 from LoggerUtils import setupRobotLogger
+from Utils import getTimeElapsed_HHMMSS
+from SensorUtils import getSensorState
 
 logger = setupRobotLogger()
+mailto = ["rouble@gmail.com"]
 
 # Always send an email, regardless of armed state
 def EmailAlertAlways(nodeId, current, previous):
     name = getNodeName(nodeId)
     alarmState = getCurrentAlarmState()
-    if (current.value == "on"):
-        sendEmail(["rouble@gmail.com"],  "[" + str(alarmState) + "] " + str(name) + " is open at " + str(current.time), "hello");
-        pass
-    elif (current.value == "off") :
-        sendEmail(["rouble@gmail.com"], "[" + str(alarmState) + "] " + str(name) + " is closed at " + str(current.time), "hello");
-        pass
+    subject = "[" + str(alarmState) + "] " + str(name) + " is " + getSensorState(current.value) + " at " + str(current.time)
+    body = "Door had been " + getSensorState(previous.value) + " for " + getTimeElapsed_HHMMSS(previous.time) + "\n\n"
+    body += "Current: " + str(current) + "\n"
+    body += "Previous: " + str(previous) + "\n"
+    body += getNodeReport(nodeId)
+    sendEmail(mailto, subject, body);
 
 def crux(*args):
     current = getNotificationFromNodeById(args[1], args[2])

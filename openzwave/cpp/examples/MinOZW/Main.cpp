@@ -47,6 +47,7 @@
 #include "value_classes/Value.h"
 #include "value_classes/ValueBool.h"
 #include "command_classes/SensorBinary.h"
+#include "command_classes/SwitchBinary.h"
 #include "platform/Log.h"
 
 using namespace OpenZWave;
@@ -439,12 +440,13 @@ void* executeCommand(void * p) {
     Log::Write(LogLevel_Info, "Executing command[%s]", cmd);
     system(cmd);
 
-    delete cmd
+    delete cmd;
     pthread_exit(NULL);
 }
 
 void notifyRaspwave (Notification const* _notification) {
     ValueID valueId = _notification->GetValueID();
+    int commandclass = valueId.GetCommandClassId();
 
     bool send = false;
     char cmd[200] = {0};
@@ -452,12 +454,17 @@ void notifyRaspwave (Notification const* _notification) {
     {
         case Notification::Type_ValueChanged:
         {
+            if ((commandclass != SensorBinary::StaticGetCommandClassId()) &&
+                (commandclass != SwitchBinary::StaticGetCommandClassId())) {
+                Log::Write(LogLevel_Info,"Ignoring notification because it is of command class: %d", commandclass);
+                return;
+            }
             string value;
             Manager::Get()->GetValueAsString(valueId, &value);
 
-            sprintf(cmd, "/etc/raspwave/pylib/postValueNotification.py %d %d %llu %s", 
+            sprintf(cmd, "/etc/raspwave/pylib/sendMsg.py postValueNotification %d %d %llu %s", 
                     valueId.GetNodeId(),
-                    valueId.GetCommandClassId(),
+                    commandclass,
                     valueId.GetId(),
                     value.c_str());
             send = true;
@@ -465,13 +472,16 @@ void notifyRaspwave (Notification const* _notification) {
         }
         case Notification::Type_NodeEvent:
         {
-            sprintf(cmd, "/etc/raspwave/pylib/postNodeEventNotification.py %d %d %llu %d", 
+            sprintf(cmd, "/etc/raspwave/pylib/sendMsg.py postNodeEventNotification %d %d %llu %d", 
                     valueId.GetNodeId(),
-                    valueId.GetCommandClassId(),
+                    commandclass,
                     valueId.GetId(),
                     _notification->GetEvent());
             send = true;
             break;
+        }
+        default: 
+        {
         }
     }
     if (send == true) {
@@ -548,7 +558,7 @@ void OnNotification
 	void* _context
 )
 {
-        Log::Write(LogLevel_Info, "Got Notification: %d", _notification->GetType());
+        Log::Write(LogLevel_Info, "Got Notification: %d, Command Class: %d", _notification->GetType(), _notification->GetValueID().GetCommandClassId());
 	// Must do this inside a critical section to avoid conflicts with the main thread
 	pthread_mutex_lock( &g_criticalSection );
 

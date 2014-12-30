@@ -2,6 +2,7 @@
 
 import sys
 from SecurityUtils import getCurrentAlarmCode, setAlarmCode
+from LoggerUtils import setupSecurityLogger
 
 logger = setupSecurityLogger()
 
@@ -16,7 +17,6 @@ def usage ():
 def main():
     processArguments()
     code = sys.argv[1]
-    logger.info( "Setting alamr code to: " + code )
     setAlarmCode(code)
     alarmCode = getCurrentAlarmCode()
     logger.info("Alarm code has been updated to: " + alarmCode)

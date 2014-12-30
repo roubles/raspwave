@@ -3,7 +3,8 @@
 
 import sys
 sys.path.append('/etc/raspwave/pylib')
-from SecurityUtils import setAlarmState, getCurrentAlarmState, getCurrentAlarmCode
+from SecurityUtils import setAlarmState,getCurrentAlarmState,getCurrentAlarmCode,unpanic
+from LoggerUtils import setupSecurityLogger
 import cgi, cgitb
 cgitb.enable()
 
@@ -22,10 +23,12 @@ else:
     print "<html><body> No code specified</body></html>"
     sys.exit(2)
 
+print "Content-type: text/html\n\n"
+
+unpanic()
 setAlarmState("DISARMED")
 alarmState = getCurrentAlarmState()
 logger.info("Alarm state has been updated to: " + alarmState)
 
 # Might need to turn off any active alarms here
-print "Content-type: text/html\n\n"
-print "<html><body> Alarm STATE is " + state + "</body></html>"
+print "<html><body> Alarm STATE is " + alarmState + " </body></html>"

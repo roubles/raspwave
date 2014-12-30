@@ -3,12 +3,15 @@
 
 import sys
 sys.path.append('/etc/raspwave/pylib')
-from RobotUtils import writeStringValue, readStringValue
+from SecurityUtils import getCurrentAlarmState
+from LoggerUtils import setupSecurityLogger
 import cgi, cgitb
 cgitb.enable()
 
-state = str(readStringValue("STATE"))
-print "STATE: " + state
+logger = setupSecurityLogger()
+
+alarmState = getCurrentAlarmState()
+logger.info("STATE was queried and retrieved as: " + alarmState)
 
 print "Content-type: text/html\n\n"
-print "<html><body> Alarm STATE is " + state + "</body></html>"
+print "<html><body> Alarm STATE is " + alarmState + "</body></html>"
