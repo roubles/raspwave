@@ -88,7 +88,7 @@ def setupRobotLogger ():
         return getRobotLogger()
 
     robotsLoggerSetup = True
-    return setupLogger(getRobotLogger(), robotsLoggingFile, True, True, True)
+    return setupLogger(getRobotLogger(), robotsLoggingFile, True, False, True)
 
 def setupCronbotLogger ():
     global cronbotsLoggerSetup
@@ -97,7 +97,7 @@ def setupCronbotLogger ():
         return getCronbotsLogger()
 
     cronbotsLoggerSetup = True
-    return setupLogger(getCronbotsLogger(), cronbotsLoggingFile, True, True, True)
+    return setupLogger(getCronbotsLogger(), cronbotsLoggingFile, True, False, True)
 
 def setupNotificationHandlerLogger ():
     global notificationHandlerLoggerSetup
@@ -106,7 +106,7 @@ def setupNotificationHandlerLogger ():
         return getNotificationHandlerLogger()
 
     notificationHandlerLoggerSetup = True
-    return setupLogger(getNotificationHandlerLogger(), notificationHandlerLoggingFile, True, True, True)
+    return setupLogger(getNotificationHandlerLogger(), notificationHandlerLoggingFile, True, False, True)
 
 def setupSecurityLogger ():
     global securityLoggerSetup
@@ -115,4 +115,4 @@ def setupSecurityLogger ():
         return getSecurityLogger()
 
     securityLoggerSetup = True
-    return setupLogger(getSecurityLogger(), securityLoggingFile, True, True, True)
+    return setupLogger(getSecurityLogger(), securityLoggingFile, True, False, True)

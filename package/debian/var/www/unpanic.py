@@ -23,10 +23,11 @@ else:
     print "<html><body> No code specified</body></html>"
     sys.exit(2)
 
+print "Content-type: text/html\n\n"
+
 infoText="unPanic-ing from web interface."
 logger.info(infoText)
 unpanic(info = infoText)
 
 # Might need to turn off any active alarms here
-print "Content-type: text/html\n\n"
 print "<html><body> Unpanic! </body></html>"
