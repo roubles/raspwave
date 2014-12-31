@@ -3,18 +3,18 @@
 
 import subprocess
 from time import sleep
-from LoggerUtils import setupRobotLogger, getRobotLogger
+from LoggerUtils import setupRobotLogger
 
-staticlogger = setupRobotLogger()
+logger = setupRobotLogger()
 
-def robotSleep (seconds, logger=getRobotLogger()):
+def robotSleep (seconds, logger=setupRobotLogger()):
     secondsInt = int(seconds)
     while (secondsInt):
         logger.info("Sleeping for " + str(secondsInt) + " seconds")
         sleep(1)
         secondsInt -= 1
 
-def sendEmail (emailAddresses, subject, body="", logger=staticlogger):
+def sendEmail (emailAddresses, subject="no subject", body="no body", logger=setupRobotLogger()):
     for emailAddress in emailAddresses:
         logger.info("Sending email to " + emailAddress)
         p1 = subprocess.Popen(['/bin/echo', body], stdout=subprocess.PIPE) #Set up the echo command and direct the output to a pipe

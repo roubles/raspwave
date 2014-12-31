@@ -10,12 +10,17 @@ if isTestEnvironment():
 else:
     confFile = "/etc/raspwave/conf/nodes.conf"
 
-settingsSection = "settings"
+settingsSection = "SETTINGS"
+homeSection = "HOME"
+awaySection = "AWAY"
+
 mailtoKey = "MAILTO"
+panicMailtoKey = "PANIC_MAILTO"
 nodeNameKey = "NAME"
 doorWindowKey = "DOORWINDOW"
 sirenKey = "SIREN"
 motionKey = "MOTION"
+exitDelayKey = "EXITDELAY"
 
 def getConfig():
     config = ConfigParser.ConfigParser()
@@ -29,23 +34,28 @@ def getConfValue(section, key):
 
 def getMailto ():
     config = getConfig()
-    mailto = config.get(settingsSection, mailtoKey)
-    return [x.strip() for x in mailto.split(',')]
+    value = config.get(settingsSection, mailtoKey)
+    return [x.strip() for x in value.split(',')]
+
+def getPanicMailto ():
+    config = getConfig()
+    value = config.get(settingsSection, panicMailtoKey)
+    return [x.strip() for x in value.split(',')]
 
 def getSirens ():
     config = getConfig()
-    mailto = config.get(settingsSection, sirenKey)
-    return [x.strip() for x in mailto.split(',')]
+    value = config.get(settingsSection, sirenKey)
+    return [x.strip() for x in value.split(',')]
 
 def getDoorWindows ():
     config = getConfig()
-    mailto = config.get(settingsSection, doorWindowKey)
-    return [x.strip() for x in mailto.split(',')]
+    value = config.get(settingsSection, doorWindowKey)
+    return [x.strip() for x in value.split(',')]
 
 def getMotions ():
     config = getConfig()
-    mailto = config.get(settingsSection, motionKey)
-    return [x.strip() for x in mailto.split(',')]
+    value = config.get(settingsSection, motionKey)
+    return [x.strip() for x in value.split(',')]
 
 def getNodes ():
     config = getConfig()
@@ -57,7 +67,7 @@ def getNodeName (id):
     try:
         return getConfValue(id, nodeNameKey)
     except:
-        return "NONAME"
+        return "Node" + str(id)
 
 def isDoorWindowOrMotion (id):
     if isDoorWindow(id):
@@ -73,3 +83,25 @@ def isSiren (id):
 
 def isMotion (id):
     return (id in getMotions())
+
+def getAlarmStateDelayForNode (id, alarmState):
+    try:
+        return int(getConfValue(id, alarmState + "_ENTERDELAY"))
+    except ConfigParser.NoOptionError:
+        if alarmState == 'AWAY':
+            return 45
+        if alarmState == 'HOME':
+            return 0
+        return None
+
+def getAwayExitDelay ():
+    try:
+        return int(getConfValue(awaySection, exitDelayKey))
+    except ConfigParser.NoOptionError:
+        return 45
+
+def getHomeExitDelay ():
+    try:
+        return int(getConfValue(homeSection, exitDelayKey))
+    except ConfigParser.NoOptionError:
+        return 0

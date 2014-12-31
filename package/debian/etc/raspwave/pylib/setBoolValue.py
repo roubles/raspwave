@@ -2,6 +2,8 @@
 
 import sys
 import socket
+import logging
+from LoggerUtils import getStdoutLogger
 
 def processArguments():
     if len(sys.argv) != 4:
@@ -11,7 +13,7 @@ def processArguments():
 def usage ():
     print "Usage: setBoolValue.py nodeid commandclass true|false"
 
-def setBoolValue(nodeid, commandclass, value):
+def setBoolValue(nodeid, commandclass, value, logger = getStdoutLogger(__name__)):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -20,10 +22,10 @@ def setBoolValue(nodeid, commandclass, value):
         msg += "," + nodeid
         msg += "," + commandclass
         msg += "," + value
-        print "sending msg: " + msg
+        logger.info("sending msg: " + msg)
         s.send(msg)
         reply = s.recv(1024)
-        print "received reply: " + reply
+        logger.info("received reply: " + reply)
     except:
         s.close()
 

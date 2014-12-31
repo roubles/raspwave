@@ -3,32 +3,33 @@
 
 import sys
 sys.path.append('/etc/raspwave/pylib')
-from SecurityUtils import setAlarmState,getCurrentAlarmState,getCurrentAlarmCode,unpanic
+from SecurityUtils import setDisarm,getCurrentAlarmState,getCurrentAlarmCode,unpanic
 from LoggerUtils import setupSecurityLogger
 import cgi, cgitb
 cgitb.enable()
 
 logger = setupSecurityLogger()
 
-code = ""
-arguments = cgi.FieldStorage()
-if "code" in arguments:
-    code = arguments["code"].value
-    if (code != getCurrentAlarmCode()):
-        print "Content-type: text/html\n\n"
-        print "<html><body> Invalid code " + code + "</body></html>"
-        sys.exit(1)
-else:
-    print "Content-type: text/html\n\n"
-    print "<html><body> No code specified</body></html>"
-    sys.exit(2)
-
 print "Content-type: text/html\n\n"
+currentAlarmCode = getCurrentAlarmCode()
+if currentAlarmCode is not None and currentAlarmCode is not "":
+    code = ""
+    arguments = cgi.FieldStorage()
+    if "code" in arguments:
+        code = arguments["code"].value
+        if (code != getCurrentAlarmCode()):
+            print "Invalid code [" + code + "]. Cannot disarm without code."
+            sys.exit(1)
+    else:
+        print "No code queryparam specified (but code is set). Cannot disarm without code."
+        sys.exit(2)
+else:
+    print "No alarm code set. Disarming without code."
 
-unpanic()
-setAlarmState("DISARMED")
+unpanic(info = "Un-panicing due to disarm.")
+setDisarm()
 alarmState = getCurrentAlarmState()
 logger.info("Alarm state has been updated to: " + alarmState)
 
 # Might need to turn off any active alarms here
-print "<html><body> Alarm STATE is " + alarmState + " </body></html>"
+print "Alarm STATE is [" + alarmState + "]"

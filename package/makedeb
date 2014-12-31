@@ -8,6 +8,7 @@ USR_LOCAL_BIN=debian/usr/local/bin
 USR_LOCAL_LIB_RASPWAVE=debian/usr/local/lib/raspwave
 ETC_INITD=debian/etc/init.d
 VAR=debian/var
+VAR_WWW_RASPWAVE=debian/var/www/raspwave
 VAR_LOG_RASPWAVE=debian/var/log/raspwave
 ETC_LOGROTATED=debian/etc/logrotate.d
 
@@ -34,8 +35,11 @@ ln -s /usr/local/lib/raspwave/libopenzwave.so.1.2 $USR_LOCAL_LIB_RASPWAVE/libope
 mkdir -p $ETC_RASPWAVE_OPENZWAVE
 cp -aR ../openzwave/config/ $ETC_RASPWAVE_OPENZWAVE
 
-mkdir -p $VAR
-cp -aR ../www/ $VAR
+#mkdir -p $VAR
+#cp -aR ../www/ $VAR
+
+mkdir -p $VAR_WWW_RASPWAVE
+cp -ar ../www/* $VAR_WWW_RASPWAVE
 
 mkdir -p $ETC_INITD
 cp -a ../init.d/raspwave $ETC_INITD

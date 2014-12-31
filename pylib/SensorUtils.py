@@ -11,4 +11,4 @@ def getSensorState(value):
         return "Closed"
     if valueStr == "255":
         return "Open"
-    return None
+    return "Unknown!"

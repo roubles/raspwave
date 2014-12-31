@@ -20,8 +20,10 @@ Main.o /home/pi/raspwave/openzwave/.dep/Main.d : Main.cpp /home/pi/raspwave/open
  /home/pi/raspwave/openzwave/cpp/src/Notification.h \
  /home/pi/raspwave/openzwave/cpp/src/value_classes/ValueStore.h \
  /home/pi/raspwave/openzwave/cpp/src/value_classes/ValueBool.h \
- /home/pi/raspwave/openzwave/cpp/src/command_classes/SensorBinary.h \
+ /home/pi/raspwave/openzwave/cpp/src/command_classes/Battery.h \
  /home/pi/raspwave/openzwave/cpp/src/command_classes/CommandClass.h \
  /home/pi/raspwave/openzwave/cpp/src/Bitfield.h \
+ /home/pi/raspwave/openzwave/cpp/src/command_classes/WakeUp.h \
+ /home/pi/raspwave/openzwave/cpp/src/command_classes/SensorBinary.h \
  /home/pi/raspwave/openzwave/cpp/src/command_classes/SwitchBinary.h \
  /home/pi/raspwave/openzwave/cpp/src/platform/Log.h

@@ -14,12 +14,14 @@ def processArguments():
 def usage ():
     print "Usage: setcode.py some-alphanumeric-code"
 
-def main():
-    processArguments()
-    code = sys.argv[1]
-    setAlarmCode(code)
-    alarmCode = getCurrentAlarmCode()
-    logger.info("Alarm code has been updated to: " + alarmCode)
+def setCode(alarmCode):
+    setAlarmCode(alarmCode)
+    logger.info("Alarm code has been updated.")
 
-if __name__ == '__main__':
-    main()
+def crux(*args):
+    processArguments()
+    alarmCode = sys.argv[1]
+    setCode(alarmCode)
+
+if __name__=='__main__':
+    sys.exit(crux(*sys.argv))

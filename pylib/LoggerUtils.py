@@ -20,6 +20,13 @@ robotsLoggerSetup = False
 cronbotsLoggerSetup = False
 notificationHandlerLoggerSetup = False
 
+def getStdoutLogger (name, loglevel=logging.DEBUG):
+    stdouthandler = logging.StreamHandler(sys.stdout)
+    stdouthandler.setLevel(loglevel)
+    logger = logging.getLogger(name)
+    logger.addHandler(stdouthandler)
+    return logger
+
 def setupLogger (logger, logfile, verbose, stdout, all=True):
     logger.setLevel(logging.DEBUG)
 

@@ -47,7 +47,7 @@
 #include "value_classes/Value.h"
 #include "value_classes/ValueBool.h"
 #include "command_classes/Battery.h"
-#include "command_classes/Wakeup.h"
+#include "command_classes/WakeUp.h"
 #include "command_classes/SensorBinary.h"
 #include "command_classes/SwitchBinary.h"
 #include "platform/Log.h"
@@ -132,7 +132,7 @@ NodeInfo* GetNodeInfo
 
 int SetBoolValue(int nodeid, int commandclass, bool value)
 {
-    bool res;
+    bool res = 0;
 
     pthread_mutex_lock( &g_criticalSection );
     for( list<NodeInfo*>::iterator it = g_nodes.begin(); it != g_nodes.end(); ++it ) {
@@ -146,12 +146,12 @@ int SetBoolValue(int nodeid, int commandclass, bool value)
             if( v.GetCommandClassId() == commandclass) {
                 res = Manager::Get()->SetValue(v, value);
                 Log::Write(LogLevel_Info, "SetValue result=%d", res);
-                return res;
+                break;
             }
         }
     }
     pthread_mutex_unlock( &g_criticalSection );
-    return 0; //return false
+    return res; //return false
 }
 
 bool addSocketToTable(int fd) 
@@ -449,22 +449,22 @@ void* executeCommand(void * p) {
 void notifyRaspwave (Notification const* _notification) {
     ValueID valueId = _notification->GetValueID();
     int commandclass = valueId.GetCommandClassId();
-    char* notificationCmd = null;
-    static char* controlNotificationCmd = "postValueNotification";
-    static char* batteryNotificationCmd = "postBatteryValueNotification";
-    static char* wakeupNotificationCmd = "postValueNotification";
+    char* notificationCmd = NULL;
+    static char* controlNotificationCmd = (char*) "postValueNotification";
+    static char* batteryNotificationCmd = (char*) "postBatteryValueNotification";
+    static char* wakeupNotificationCmd = (char*) "postWakeupNotification";
 
     bool send = false;
-    char *cmd[200] = (char*) malloc (200);
+    char *cmd = (char*) malloc (200);
     switch( _notification->GetType() ) 
     {
         case Notification::Type_ValueChanged:
         {
             if ((commandclass == SensorBinary::StaticGetCommandClassId()) || (commandclass == SwitchBinary::StaticGetCommandClassId())) {
-                notificationCmd = postValueNotification;
+                notificationCmd = controlNotificationCmd;
             } else if (commandclass == Battery::StaticGetCommandClassId()) {
                 notificationCmd = batteryNotificationCmd;
-            } else if (commandclass == Wakeup::StaticGetCommandClassId()) {
+            } else if (commandclass == WakeUp::StaticGetCommandClassId()) {
                 notificationCmd = wakeupNotificationCmd;
             } else {
                 Log::Write(LogLevel_Info,"Ignoring notification because it is of command class: %d", commandclass);
@@ -474,7 +474,7 @@ void notifyRaspwave (Notification const* _notification) {
             Manager::Get()->GetValueAsString(valueId, &value);
 
             sprintf(cmd, "/etc/raspwave/pylib/sendMsg.py %s %d %d %llu %s", 
-                    notificationCmd
+                    notificationCmd,
                     valueId.GetNodeId(),
                     commandclass,
                     valueId.GetId(),

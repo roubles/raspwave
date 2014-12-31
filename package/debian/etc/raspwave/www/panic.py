@@ -16,4 +16,4 @@ infoText="Panic-ing from web interface."
 logger.info(infoText)
 panic(info = infoText)
 
-print "<html><body> Panic! </body></html>"
+print "Panic!"

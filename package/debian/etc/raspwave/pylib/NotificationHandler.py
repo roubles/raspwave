@@ -16,6 +16,7 @@ from LoggerUtils import setupNotificationHandlerLogger, getNotificationHandlerLo
 from Notification import Notification, ValueNotification, BatteryValueNotification, NodeEventNotification, ValueChangeNotification, WakeupNotification
 from Utils import get_absolute_path
 from EnvUtils import isTestEnvironment
+from ConfUtils import getNodeName
 
 logger = None
 
@@ -200,7 +201,7 @@ class NotificationHandler:
             for key in self.shelf.keys():
                 ncb = self.shelf.get(key, None)
                 if ncb is not None:
-                    report += "Node ID: " + key + "\n"
+                    report += "Node ID: " + nodeId + ": " + getNodeName(nodeId) + "\n"
                     report += "  Control Value: " + str(ncb.value) + "\n"
                     report += "  Battery Level: " + str(ncb.batteryValue) + "\n"
                     report += "  Last Wakeup Time: " + str(ncb.lastWakeupTime) + "\n"
@@ -220,7 +221,7 @@ class NotificationHandler:
         with self.lock:
             ncb = self.shelf.get(nodeId, None)
             if ncb is not None:
-                report += "Node ID: " + nodeId + "\n"
+                report += "Node ID: " + nodeId + ": " + getNodeName(nodeId) + "\n"
                 report += "  Control Value: " + str(ncb.value) + "\n"
                 report += "  Battery Level: " + str(ncb.batteryValue) + "\n"
                 report += "  Last Wakeup Time: " + str(ncb.lastWakeupTime) + "\n"
@@ -489,15 +490,16 @@ def getNodeReport(nodeId, logger=getNotificationHandlerLogger()):
         s.close()
 
 def sendMsg (*args):
+    logger = setupNotificationHandlerLogger()
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         s.connect(('localhost', 55555))
         msg = ",".join(args)
-        print("Sending msg: " + msg)
+        logger.info("Sending msg: " + msg)
         s.send(msg)
         reply = s.recv(1024)
-        print("Rxd reply: " + reply)
+        logger.info("Rxd reply: " + reply)
     finally:
         s.close()
 

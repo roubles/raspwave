@@ -19,7 +19,7 @@ def EmailAlertAlways(nodeId, current, previous):
     name = getNodeName(nodeId)
     alarmState = getCurrentAlarmState()
     subject = "[" + str(alarmState) + "] " + str(name) + " is " + getSensorState(current.value) + " at " + str(current.time)
-    body = "Door had been " + getSensorState(previous.value) + " for " + getTimeElapsed_HHMMSS(previous.time) + "\n\n"
+    body = "Door had been " + getSensorState(previous.value) + " for " + getTimeElapsed_HHMMSS(previous.time) + ".\n\n"
     body += "Current: " + str(current) + "\n"
     body += "Previous: " + str(previous) + "\n"
     body += getNodeReport(nodeId)
