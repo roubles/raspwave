@@ -12,17 +12,20 @@ def usage ():
     print "Usage: setBoolValue.py nodeid commandclass true|false"
 
 def setBoolValue(nodeid, commandclass, value):
-    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    s.connect(('localhost', 55556))
-    msg = "setBoolValue"
-    msg += "," + nodeid
-    msg += "," + commandclass
-    msg += "," + value
-    print "sending msg: " + msg
-    s.send(msg)
-    reply = s.recv(1024)
-    print "received reply: " + reply
-    s.close()
+    s = None
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(('localhost', 55556))
+        msg = "setBoolValue"
+        msg += "," + nodeid
+        msg += "," + commandclass
+        msg += "," + value
+        print "sending msg: " + msg
+        s.send(msg)
+        reply = s.recv(1024)
+        print "received reply: " + reply
+    except:
+        s.close()
 
 def main(*args):
     processArguments()

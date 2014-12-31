@@ -32,6 +32,21 @@ def getMailto ():
     mailto = config.get(settingsSection, mailtoKey)
     return [x.strip() for x in mailto.split(',')]
 
+def getSirens ():
+    config = getConfig()
+    mailto = config.get(settingsSection, sirenKey)
+    return [x.strip() for x in mailto.split(',')]
+
+def getDoorWindows ():
+    config = getConfig()
+    mailto = config.get(settingsSection, doorWindowKey)
+    return [x.strip() for x in mailto.split(',')]
+
+def getMotions ():
+    config = getConfig()
+    mailto = config.get(settingsSection, motionKey)
+    return [x.strip() for x in mailto.split(',')]
+
 def getNodes ():
     config = getConfig()
     sections = config.sections()
@@ -44,26 +59,17 @@ def getNodeName (id):
     except:
         return "NONAME"
 
-def isKeyValueTrue (id, key):
-    try:
-        if getConfValue(id, key).lower() == 'true':
-            return True
-    except:
-        pass
-    return False
-
 def isDoorWindowOrMotion (id):
     if isDoorWindow(id):
         return True
     if isMotion(id):
         return True
-    return False
 
 def isDoorWindow (id):
-    return isKeyValueTrue(id, doorWindowKey)
+    return (id in getDoorWindows())
 
 def isSiren (id):
-    return isKeyValueTrue(id, sirenKey)
+    return (id in getSirens())
 
 def isMotion (id):
-    return isKeyValueTrue(id, motionKey)
+    return (id in getMotions())

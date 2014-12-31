@@ -19,7 +19,7 @@ for node in getNodes():
     name = getNodeName(node)
     logger.info("Testing node: " + node + ":" + name)
 
-    notification = getEarliestNotificationOfCurrentState(node, logger)
+    notification = getEarliestNotificationOfCurrentState(node, logger = logger)
     if not notification:
         logger.info("No notifications for node: " + name)
     elif (notification.value == 'False'):
