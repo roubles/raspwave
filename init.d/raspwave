@@ -63,6 +63,7 @@ case "${1}" in
         ;;
     restart|force-reload)
         $0 stop
+        /bin/sleep 5
         $0 start
         ;;
     *)

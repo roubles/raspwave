@@ -87,21 +87,23 @@ def isMotion (id):
 def getAlarmStateDelayForNode (id, alarmState):
     try:
         return int(getConfValue(id, alarmState + "_ENTERDELAY"))
-    except ConfigParser.NoOptionError:
+    except:
         if alarmState == 'AWAY':
             return 45
+        if alarmState == 'RELAXED':
+            return 180
         if alarmState == 'HOME':
             return 0
-        return None
+        return 60
 
-def getAwayExitDelay ():
+def getExitDelay (alarmState):
     try:
-        return int(getConfValue(awaySection, exitDelayKey))
-    except ConfigParser.NoOptionError:
-        return 45
-
-def getHomeExitDelay ():
-    try:
-        return int(getConfValue(homeSection, exitDelayKey))
-    except ConfigParser.NoOptionError:
-        return 0
+        return int(getConfValue(alarmState, exitDelayKey))
+    except:
+        if alarmState == 'AWAY':
+            return 45
+        if alarmState == 'RELAXED':
+            return 180
+        if alarmState == 'HOME':
+            return 0
+        return 60

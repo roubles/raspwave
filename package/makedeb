@@ -60,3 +60,7 @@ cp -a prerm debian/DEBIAN
 dpkg-deb --build debian
 mv debian.deb raspwave_${VERSION}.deb
 echo "Created package raspwave_${VERSION}.deb"
+
+if [ "$1" == "install" ]; then
+    sudo dpkg -i raspwave_${VERSION}.deb
+fi
