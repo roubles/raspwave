@@ -12,6 +12,7 @@ from Utils import getNowStr,convert_timedelta_str
 from setBoolValue import setBoolValue
 from time import sleep
 import threading
+import hashlib
 
 alarmStateKey = "ALARM_STATE"
 alarmCodeKey  = "ALARM_CODE"
@@ -206,6 +207,7 @@ def setDelayedAlarmState (alarmState, delay):
         logger.info("We are already in state: " + alarmState + ". Nothing to do.")
 
 def setAlarmCode(alarmCode):
-    logger.info("Setting Alarm code to: " + alarmCode)
+    logger.info("Setting Alarm code...")
     sendEmail(mailto, "Setting Alarm code")
-    writeStringValue(alarmCodeKey, alarmCode)
+    md5Alarmcode = hashlib.md5(alarmCode).hexdigest()
+    writeStringValue(alarmCodeKey, md5Alarmcode)

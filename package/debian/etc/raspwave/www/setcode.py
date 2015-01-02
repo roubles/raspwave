@@ -2,6 +2,7 @@
 # @author rouble matta
 
 import sys
+import hashlib
 sys.path.append('/etc/raspwave/pylib')
 from SecurityUtils import getCurrentAlarmCode,setAlarmCode
 from LoggerUtils import setupSecurityLogger
@@ -18,7 +19,7 @@ if currentAlarmCode is not None and currentAlarmCode is not "":
     arguments = cgi.FieldStorage()
     if "existingcode" in arguments:
             existingCode = arguments["existingcode"].value
-            if existingCode != currentAlarmCode:
+            if hashlib.md5(existingCode).hexdigest() != currentAlarmCode:
                 print "existingcode does not match with what is set. Cannot update code."
                 sys.exit(1)
     else:
@@ -31,7 +32,7 @@ if "code" in arguments:
     code = arguments["code"].value
     if code is not None:
         setAlarmCode(code)
-        print "Alarm Code is set to [" + code + "]"
+        print "Alarm Code is set."
     else:
         print "No code specified. Nothing to set."
 else:

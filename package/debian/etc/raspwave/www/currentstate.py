@@ -33,6 +33,6 @@ if desiredstate != currentAlarmState:
     if exitdelay and desiredstate:
         print '  <h6> Setting state to ' + desiredstate + ' after exit delay of ' + exitdelay + ' seconds</h6>'
 print '  <h6> State has been ' + getCurrentAlarmState() + ' for ' + convert_timedelta_str(getLastStateChangeTimeDelta()) + ' since ' + str(getLastStateChangeTime()) + '</h6>'
-print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/controlpanel.py\'" style="background-color:lightblue;font: bold 60px Arial">Back to Control Panel</button><br><br>'
+print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/controlpanel.py\'" style="font: bold 60px Arial">Back to Control Panel</button><br><br>'
 print '  </body>'
 print '</html>'

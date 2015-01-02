@@ -12,6 +12,7 @@ from Utils import getNowStr,convert_timedelta_str
 from setBoolValue import setBoolValue
 from time import sleep
 import threading
+import hashlib
 
 alarmStateKey = "ALARM_STATE"
 alarmCodeKey  = "ALARM_CODE"
@@ -25,6 +26,7 @@ logger = setupSecurityLogger()
 mailto = getMailto()
 panicMailto = getPanicMailto()
 panicLock = threading.RLock()
+stateLock = threading.RLock()
 
 AlarmState = ["RELAXED", "AWAY", "HOME", "DISARMED"]
 
@@ -164,21 +166,23 @@ def setAlarmState(alarmState):
         logger.info("Unknown alarm state: " + alarmState)
         raise Exception("Unknown alarm state: " + alarmState)
 
-    currentAlarmState = getCurrentAlarmState()
-    timeDelta = getLastStateChangeTimeDelta()
-    if alarmState != currentAlarmState:
-        logger.info("Setting Alarm state to: " + alarmState)
-        writeStringValue(alarmStateKey, alarmState)
-        setLastStateChangeTime()
-        subject = "Alarm state is: " + alarmState + " at " + getNowStr()
-        body = "Previous state was " + currentAlarmState + "."
-        sendEmail(mailto, subject, body)
-    else:
-        if alarmState != 'RELAXED':
-            subject = "Alarm state is: " + alarmState
-            body = "Alarm state has been " + alarmState + " for " + convert_timedelta_str(timeDelta) + "."
+    logger.info("Capturing state lock")
+    with stateLock:
+        currentAlarmState = getCurrentAlarmState()
+        timeDelta = getLastStateChangeTimeDelta()
+        if alarmState != currentAlarmState:
+            logger.info("Setting Alarm state to: " + alarmState)
+            writeStringValue(alarmStateKey, alarmState)
+            setLastStateChangeTime()
+            subject = "Alarm state is: " + alarmState + " at " + getNowStr()
+            body = "Previous state was " + currentAlarmState + "."
             sendEmail(mailto, subject, body)
-        logger.info("We are already in state: " + alarmState + ". Nothing to do.")
+        else:
+            if alarmState != 'RELAXED':
+                subject = "Alarm state is: " + alarmState
+                body = "Alarm state has been " + alarmState + " for " + convert_timedelta_str(timeDelta) + "."
+                sendEmail(mailto, subject, body)
+            logger.info("We are already in state: " + alarmState + ". Nothing to do.")
 
 def setDelayedAlarmState (alarmState, delay):
     if alarmState not in AlarmState:
@@ -203,6 +207,7 @@ def setDelayedAlarmState (alarmState, delay):
         logger.info("We are already in state: " + alarmState + ". Nothing to do.")
 
 def setAlarmCode(alarmCode):
-    logger.info("Setting Alarm code to: " + alarmCode)
+    logger.info("Setting Alarm code...")
     sendEmail(mailto, "Setting Alarm code")
-    writeStringValue(alarmCodeKey, alarmCode)
+    md5Alarmcode = hashlib.md5(alarmCode).hexdigest()
+    writeStringValue(alarmCodeKey, md5Alarmcode)
