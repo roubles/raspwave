@@ -33,7 +33,7 @@ if __name__ == '__main__':
     print '      <br><br>'
     print '      <h3> Detailed Status</h3>'
     print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/alarm_status.py\'" style="font: bold 60px Arial">DETAIL STATUS</button><br><br>'
-    print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/report.py\'" style="font: bold 60px Arial">REPORT</button><br><br>'
+    print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/report.py\'" style="font: bold 60px Arial">NODE REPORT</button><br><br>'
     print '    </div>'
     print '  <style>'
     print '    html, body {'
