@@ -11,6 +11,8 @@ else:
     confFile = "/etc/raspwave/conf/nodes.conf"
 
 settingsSection = "SETTINGS"
+httpUsernameKey = "HTTPUSERNAME"
+httpPasswordKey = "HTTPPASSWORD"
 homeSection = "HOME"
 awaySection = "AWAY"
 
@@ -31,6 +33,12 @@ def getConfig():
 def getConfValue(section, key):
     config = getConfig()
     return config.get(section, key) 
+
+def getHttpUsername ():
+    return getConfValue(settingsSection, httpUsernameKey)
+
+def getHttpPassword ():
+    return getConfValue(settingsSection, httpPasswordKey)
 
 def getMailto ():
     config = getConfig()
@@ -89,21 +97,21 @@ def getAlarmStateDelayForNode (id, alarmState):
         return int(getConfValue(id, alarmState + "_ENTERDELAY"))
     except:
         if alarmState == 'AWAY':
-            return 45
+            return 90
         if alarmState == 'RELAXED':
             return 180
         if alarmState == 'HOME':
             return 0
-        return 60
+        return 90
 
 def getExitDelay (alarmState):
     try:
         return int(getConfValue(alarmState, exitDelayKey))
     except:
         if alarmState == 'AWAY':
-            return 45
+            return 90
         if alarmState == 'RELAXED':
             return 180
         if alarmState == 'HOME':
             return 0
-        return 60
+        return 90

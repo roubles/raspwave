@@ -15,6 +15,9 @@ import threading
 import hashlib
 
 alarmStateKey = "ALARM_STATE"
+alarmDesiredStateKey = "ALARM_DESIRED_STATE"
+alarmDesiredStateDelay = "ALARM_DESIRED_STATE_DELAY"
+alarmPreviousStateKey = "ALARM_PREVIOUS_STATE"
 alarmCodeKey  = "ALARM_CODE"
 alarmPanicKey  = "ALARM_PANIC"
 lastPanicTimeKey  = "LAST_PANIC_TIME"
@@ -140,6 +143,40 @@ def isPanic():
         pass
     return False
 
+def setPreviousAlarmState (state):
+    writeStringValue(alarmPreviousStateKey, state)
+
+def getPreviousAlarmState ():
+    try:
+        return readStringValue(alarmPreviousStateKey)
+    except KeyError:
+        return "UNKNOWN"
+
+def setDesiredAlarmState (state):
+    writeStringValue(alarmDesiredStateKey, state)
+
+def getDesiredAlarmState ():
+    try:
+        return readStringValue(alarmDesiredStateKey)
+    except KeyError:
+        return "UNKNOWN"
+
+def setDesiredAlarmStateDelay (date):
+    writeStringValue(alarmDesiredStateDelay, date)
+
+def getDesiredAlarmStateDelay ():
+    try:
+        return readStringValue(alarmDesiredStateDelay)
+    except KeyError:
+        return "UNKNOWN"
+
+def getDesiredAlarmStateDelayAsTime ():
+    desiredAlarmStateDelay = getDesiredAlarmStateDelay()
+    try:
+        return datetime.datetime.strptime(desiredAlarmStateDelay, "%Y-%m-%d %H:%M:%S.%f")
+    except:
+        return date.datetime(1970,1,1)
+
 def getCurrentAlarmState ():
     try:
         return readStringValue(alarmStateKey)
@@ -166,12 +203,15 @@ def setAlarmState(alarmState):
         logger.info("Unknown alarm state: " + alarmState)
         raise Exception("Unknown alarm state: " + alarmState)
 
+    setDesiredAlarmState(alarmState)
+    setDesiredAlarmStateDelay(str(datetime.datetime.now()))
     logger.info("Capturing state lock")
     with stateLock:
         currentAlarmState = getCurrentAlarmState()
         timeDelta = getLastStateChangeTimeDelta()
         if alarmState != currentAlarmState:
             logger.info("Setting Alarm state to: " + alarmState)
+            setPreviousAlarmState(currentAlarmState)
             writeStringValue(alarmStateKey, alarmState)
             setLastStateChangeTime()
             subject = "Alarm state is: " + alarmState + " at " + getNowStr()
@@ -189,6 +229,8 @@ def setDelayedAlarmState (alarmState, delay):
         logger.info("Unknown alarm state: " + alarmState)
         raise Exception("Unknown alarm state: " + alarmState)
 
+    setDesiredAlarmState(alarmState)
+    setDesiredAlarmStateDelay(str(datetime.datetime.now() + datetime.timedelta(seconds=delay)))
     currentAlarmState = getCurrentAlarmState()
     timeDelta = getLastStateChangeTimeDelta()
     if alarmState != currentAlarmState:
