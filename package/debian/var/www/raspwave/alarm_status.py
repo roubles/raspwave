@@ -3,7 +3,7 @@
 
 import sys
 sys.path.append('/etc/raspwave/pylib')
-from SecurityUtils import getCurrentAlarmState,isPanic,getLastStateChangeTime,getLastPanicTime,getLastAlertTime
+from SecurityUtils import getCurrentAlarmState,isPanic,getLastStateChangeTime,getLastPanicTime,getLastAlertTime,getPreviousAlarmState,getDesiredAlarmState,getDesiredAlarmStateDelay
 
 from LoggerUtils import setupSecurityLogger
 import cgi, cgitb
@@ -18,7 +18,21 @@ report += "Alarm State: " + alarmState + "\n"
 report += "Alarm Panic: " + str(alarmPanic) + "\n"
 report += "Last Panic time: " + str(getLastPanicTime()) + "\n"
 report += "Last Alert time: " + str(getLastAlertTime()) + "\n"
-report += "Last State Change time: " + str(getLastStateChangeTime()) + "\n\n"
+report += "Last State Change time: " + str(getLastStateChangeTime()) + "\n"
+report += "Previous State: " + str(getPreviousAlarmState()) + "\n"
+report += "Desired State: " + str(getDesiredAlarmState()) + "\n"
+report += "Desired State Delay: " + str(getDesiredAlarmStateDelay()) + "\n\n"
 
-print "Content-type: text/html\n\n"
-print "<html><body><pre>" + report + "</pre></body></html>"
+print 'Content-Type: text/html'
+print # HTTP says you have to have a blank line between headers and content
+print '<html>'
+print '  <head>'
+print '    <meta http-equiv="refresh" content="5"/>'
+print '    <title> Detail Report </title>'
+print '  </head>' 
+print '  <body>'
+print '  <h1> Detail Report </h1>'
+print '  <pre>' + report + '</pre>'
+print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/controlpanel.py\'" style="font: bold 60px Arial">Back to Control Panel</button><br><br>'
+print '  </body>'
+print '</html>'

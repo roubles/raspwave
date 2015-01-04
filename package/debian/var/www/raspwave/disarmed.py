@@ -24,6 +24,7 @@ if __name__ == '__main__':
     print '  <h1>'
     (retVal,code) = testCode(cgi.FieldStorage())
     if retVal == 1:
+        logger.info("Invalid code [" + code + "]. Cannot disarm without code.")
         print "Invalid code [" + code + "]. Cannot disarm without code."
         exit = True
     elif retVal == 2:
@@ -32,7 +33,7 @@ if __name__ == '__main__':
     elif retVal == 0:
         print "No alarm code set. Disarming without code."
     elif retVal == 3:
-        print "Disarming..."
+        print "Valid code. Disarming..."
     print '  </h1>'
 
     if retVal == 0 or retVal == 3:

@@ -32,7 +32,7 @@ if __name__ == '__main__':
     elif retVal == 0:
         print "No alarm code set. Unpanic without code."
     elif retVal == 3:
-        print "Unpanic-ing ..."
+        print "Valid code. Unpanic-ing..."
     print '  </h1>'
 
     if retVal == 0 or retVal == 3:
