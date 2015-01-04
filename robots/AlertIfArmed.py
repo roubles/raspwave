@@ -59,7 +59,7 @@ def AlertIfArmed(nodeId, current, previous):
                 logger.info("No delay defined for alarm state: [" + alarmState + "]. Defaulting to 10 seconds.")
                 alarmStateDelay = 10
             logger.info("We are in the following armed state: [" + alarmState + "]. Siren will be enabled in " + str(alarmStateDelay) + " seconds")
-            subject = "Sensor tripped on node " + name + "in alarm state: " + alarmState + " on " + str(current.time)
+            subject = "[" + alarmState + "] Sensor tripped on node " + name + " on " + str(current.time)
             body = "Siren will fire in " + str(alarmStateDelay) + " seconds."
             sendEmail(mailto, subject, body)
             sleepWithBuzz(alarmStateDelay)
