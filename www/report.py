@@ -30,7 +30,6 @@ print 'Content-Type: text/html'
 print # HTTP says you have to have a blank line between headers and content
 print '<html>'
 print '  <head>'
-print '    <meta http-equiv="refresh" content="5"/>'
 print '    <title> Node Report </title>'
 print '  </head>' 
 print '  <body>'

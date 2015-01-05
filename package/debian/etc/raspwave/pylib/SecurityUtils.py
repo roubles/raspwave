@@ -238,6 +238,10 @@ def setDelayedAlarmState (alarmState, delay):
             logger.info("Setting state: " + alarmState + " after " + str(delay) + " seconds.")
             sleep(1)
             delay -= 1
+        currentDesiredAlarmState = getDesiredAlarmState()
+        if (currentDesiredAlarmState != alarmState):
+            logger.info("Not setting State!!. The current desired state is: " + currentDesiredAlarmState + " and we were waiting to set it to " + alarmState)
+            return
         setAlarmState(alarmState)
         alarmState = getCurrentAlarmState()
         logger.info("Alarm state has been updated to: " + alarmState)
