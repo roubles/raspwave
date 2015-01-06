@@ -224,13 +224,16 @@ def setAlarmState(alarmState):
                 sendEmail(mailto, subject, body)
             logger.info("We are already in state: " + alarmState + ". Nothing to do.")
 
-def setDelayedAlarmState (alarmState, delay):
+def setDelayedAlarmState (alarmState, delay, desiredStateAlreadySet = False):
     if alarmState not in AlarmState:
         logger.info("Unknown alarm state: " + alarmState)
         raise Exception("Unknown alarm state: " + alarmState)
 
-    setDesiredAlarmState(alarmState)
-    setDesiredAlarmStateDelay(str(datetime.datetime.now() + datetime.timedelta(seconds=delay)))
+    if desiredStateAlreadySet == False:
+        setDesiredAlarmState(alarmState)
+        setDesiredAlarmStateDelay(str(datetime.datetime.now() + datetime.timedelta(seconds=delay)))
+    else:
+        logger.info("Desired state has already been set.")
     currentAlarmState = getCurrentAlarmState()
     timeDelta = getLastStateChangeTimeDelta()
     if alarmState != currentAlarmState:

@@ -16,7 +16,9 @@ from LoggerUtils import setupNotificationHandlerLogger, getNotificationHandlerLo
 from Notification import Notification, ValueNotification, BatteryValueNotification, NodeEventNotification, ValueChangeNotification, WakeupNotification
 from Utils import get_absolute_path
 from EnvUtils import isTestEnvironment
-from ConfUtils import getNodeName
+from ConfUtils import getNodeName,isSiren,isMotion,isDoorWindow
+from SensorUtils import getSensorState
+from SirenUtils import getSirenState
 
 logger = None
 
@@ -34,12 +36,25 @@ class NodeControlBlock:
     def __init__(self, nid):
         self.nid = nid
         self.value = None
+        self.state = None
         self.batteryValue = None
         self.lastWakeupTime = None
         self.wakeupInterval = None
         self.batteryNotifications = []
         self.wakeupNotifications = []
         self.notifications = []
+    def setValue(self, value):
+        self.value = value
+        self.state = getNodeState(self.nid, self.value)
+
+def getNodeState (nodeId, value):
+    if isSiren(nodeId):
+        return getSirenState(value)
+    if isDoorWindow(nodeId):
+        return getSensorState(value)
+    if isMotion(nodeId):
+        return "Unsupported motion sensor"
+    return "Unsupported node type"
 
 class RobotLauncher(threading.Thread):
     def __init__ (self, type, current, previous):
@@ -106,6 +121,10 @@ class ClientListener(threading.Thread):
                     n = self.nh.getNotificationFromNodeById(dataList[1], dataList[2], dataList[3])
                     logger.info("Got notification by ID: " + str(n))
                     reply = pickle.dumps(n)
+                if dataList[0] == "getNCB":
+                    logger.info("Getting NCB: " + dataList[1])
+                    ncb = self.nh.shelf.get(dataList[1], None)
+                    reply = pickle.dumps(ncb)
                 if dataList[0] == "getNodeReport":
                     reply = self.nh.getNodeReport(dataList[1])
                     # This can get rather large.
@@ -203,6 +222,7 @@ class NotificationHandler:
                 if ncb is not None:
                     report += "Node ID: " + nodeId + ": " + getNodeName(nodeId) + "\n"
                     report += "  Control Value: " + str(ncb.value) + "\n"
+                    report += "  State: " + str(ncb.state) + "\n"
                     report += "  Battery Level: " + str(ncb.batteryValue) + "\n"
                     report += "  Last Wakeup Time: " + str(ncb.lastWakeupTime) + "\n"
                     report += "  Wakeup Interval: " + str(ncb.wakeupInterval) + "\n"
@@ -325,7 +345,7 @@ class NotificationHandler:
                 ncb.notifications = l[:self.maxNotifcationsPerNode]
 
             # Set overall control value for this node and put it on the shelf
-            ncb.value = notification.value
+            ncb.setValue(notification.value)
             self.shelf[nodeIdStr] = ncb
             self.shelf.sync()
             #End critical section
@@ -486,6 +506,19 @@ def getNodeReport(nodeId, logger=getNotificationHandlerLogger()):
         s.send(msg)
         report = s.recv(10240)
         return report 
+    finally:
+        s.close()
+
+def getNCB(nodeId, logger=getNotificationHandlerLogger()):
+    s = None
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.connect(('localhost', 55555))
+        msg = "getNCB," + str(nodeId)
+        logger.info("sending msg: " + msg)
+        s.send(msg)
+        ncb = s.recv(10240)
+        return pickle.loads(ncb) 
     finally:
         s.close()
 

@@ -31,5 +31,5 @@ if __name__ == '__main__':
 
     if retVal == 0 or retVal == 3:
         infoText="unPanic-ing due to disarm."
-        os.popen('/usr/local/bin/raspscpt /etc/raspwave/scripts/disarm.py \"' + infoText + '\"&' )
+        os.popen('/usr/local/bin/raspscpt /etc/raspwave/scripts/disarm.py \"' + infoText + '\"' )
     print 'OK'

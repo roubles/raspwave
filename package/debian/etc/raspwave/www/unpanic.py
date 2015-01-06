@@ -30,5 +30,5 @@ if __name__ == '__main__':
 
     if retVal == 0 or retVal == 3:
         infoText="unPanic-ing from web interface."
-        os.popen('/usr/local/bin/raspscpt /etc/raspwave/scripts/unpanic.py \"' + infoText + '\"&' )
+        os.popen('/usr/local/bin/raspscpt /etc/raspwave/scripts/unpanic.py \"' + infoText + '\"' )
     print 'OK'

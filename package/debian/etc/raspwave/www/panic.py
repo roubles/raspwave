@@ -14,7 +14,7 @@ logger = setupSecurityLogger()
 if __name__ == '__main__':
     infoText="Panic-ing from web interface."
     logger.info(infoText)
-    os.popen('/usr/local/bin/raspscpt /etc/raspwave/scripts/panic.py \"' + infoText + '\"&' )
+    os.popen('/usr/local/bin/raspscpt /etc/raspwave/scripts/panic.py \"' + infoText + '\"' )
     print 'Content-Type: text/html'
     print # HTTP says you have to have a blank line between headers and content
     print 'OK'

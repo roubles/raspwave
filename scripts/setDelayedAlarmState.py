@@ -8,18 +8,19 @@ from time import sleep
 logger = setupSecurityLogger()
 
 def processArguments():
-    if len(sys.argv) < 3:
+    if len(sys.argv) < 4:
         usage()
         sys.exit(1)
 
 def usage ():
-    print "Usage: setDelayedAlarmState.py alarm-state delay"
+    print "Usage: setDelayedAlarmState.py alarm-state delay desiredStateAlreadySet"
 
 def crux(*args):
     processArguments()
     alarmState = sys.argv[1]
     delay = int(sys.argv[2])
-    setDelayedAlarmState(alarmState, delay)
+    desiredStateAlreadySet = bool(sys.argv[3])
+    setDelayedAlarmState(alarmState, delay, desiredStateAlreadySet)
 
 if __name__=='__main__':
     sys.exit(crux(*sys.argv))

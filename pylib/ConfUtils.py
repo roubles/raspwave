@@ -15,6 +15,8 @@ httpUsernameKey = "HTTPUSERNAME"
 httpPasswordKey = "HTTPPASSWORD"
 homeSection = "HOME"
 awaySection = "AWAY"
+relaxedSection = "RELAXED"
+disarmedSection = "DISARMED"
 
 mailtoKey = "MAILTO"
 panicMailtoKey = "PANIC_MAILTO"
@@ -68,7 +70,14 @@ def getMotions ():
 def getNodes ():
     config = getConfig()
     sections = config.sections()
-    sections.remove(settingsSection)
+    try:
+        sections.remove(settingsSection)
+        sections.remove(homeSection)
+        sections.remove(awaySection)
+        sections.remove(relaxedSection)
+        sections.remove(disarmedSection)
+    except:
+        pass
     return sections
 
 def getNodeName (id):
@@ -77,11 +86,21 @@ def getNodeName (id):
     except:
         return "Node" + str(id)
 
+def isNode (id):
+    if isDoorWindow(id):
+        return True
+    if isMotion(id):
+        return True
+    if isSiren(id):
+        return True
+    return False
+
 def isDoorWindowOrMotion (id):
     if isDoorWindow(id):
         return True
     if isMotion(id):
         return True
+    return False
 
 def isDoorWindow (id):
     return (id in getDoorWindows())
