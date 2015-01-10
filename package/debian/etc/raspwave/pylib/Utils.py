@@ -4,6 +4,14 @@
 import os
 import datetime
 
+def secondsLeft (then):
+    now = datetime.datetime.now()
+    return (then - now).total_seconds()
+
+def secondsLeftFromString (desiredAlarmStateDelay):
+    then = datetime.datetime.strptime(desiredAlarmStateDelay, "%Y-%m-%d %H:%M:%S.%f")
+    return secondsLeft(then)
+
 def getNowStr () :
     return str(datetime.datetime.now())
 

@@ -10,7 +10,8 @@ from NotificationHandler import getNotificationFromNodeById,getLatestNotificatio
 from LoggerUtils import setupRobotLogger
 from SensorUtils import getSensorState
 from SecurityUtils import getLastAlertTimeDelta,setLastAlertTime
-from Utils import convert_timedelta_str
+from Utils import convert_timedelta_str,secondsLeft
+from UserSpecific import beep
 from setBoolValue import setBoolValue
 from time import sleep
 import threading
@@ -21,27 +22,34 @@ mailto = getMailto()
 alertLock = threading.RLock()
 ignoreReAlertWithinSeconds=30
 
-def buzz ():
-    logger.info("Buzz!")
-    setBoolValue("6", "37", "true")
-    setBoolValue("6", "37", "false")
-
-def sleepWithBuzz(seconds):
-    buzzEverySeconds=60
-    elapsedSinceLastBuzzSeconds=0
-    secondsInt = int(seconds)
-    for i in range(1, secondsInt):
-        sleep(1)
-        elapsedSinceLastBuzzSeconds += 1
-        logger.info("Slept for " + str(i) + " seconds")
-        logger.info("Slept for " + str(elapsedSinceLastBuzzSeconds) + " seconds since last buzz")
+def sleepWithBeep(then):
+    while True:
         if (getCurrentAlarmState() == "DISARMED"):
             logger.info("Alarm disarmed while sleeping")
             break
-        if elapsedSinceLastBuzzSeconds == buzzEverySeconds: 
-            buzz()
-            buzzEverySeconds=30
-            elapsedSinceLastBuzzSeconds=0
+
+        seconds = secondsLeft(then)
+        logger.info("Siren is going to go off in " + str(seconds) + " seconds")
+        if seconds < 0:
+            break
+        elif seconds < 30:
+            logger.info("Beeping every second")
+            beep()
+            sleep(1)
+        elif seconds < 60:
+            logger.info("Beeping every 2 seconds")
+            beep()
+            sleep(2)
+        elif seconds < 90:
+            logger.info("Beeping every 3 seconds")
+            beep()
+            sleep(3)
+        elif seconds < 120:
+            logger.info("Beeping every 4 seconds")
+            beep()
+            sleep(4)
+        else: 
+            sleep(5)
 
 def AlertIfArmed(nodeId, current, previous):
     with alertLock:
@@ -58,11 +66,12 @@ def AlertIfArmed(nodeId, current, previous):
             if alarmStateDelay is None:
                 logger.info("No delay defined for alarm state: [" + alarmState + "]. Defaulting to 10 seconds.")
                 alarmStateDelay = 10
+            then = datetime.datetime.now() + datetime.timedelta(seconds=alarmStateDelay)
             logger.info("We are in the following armed state: [" + alarmState + "]. Siren will be enabled in " + str(alarmStateDelay) + " seconds")
             subject = "[" + alarmState + "] Sensor tripped on node " + name + " on " + str(current.time)
-            body = "Siren will fire in " + str(alarmStateDelay) + " seconds."
+            body = "Siren will fire in " + str(alarmStateDelay) + " seconds at " + str(then)
             sendEmail(mailto, subject, body)
-            sleepWithBuzz(alarmStateDelay)
+            sleepWithBeep(then)
             # Now check is enduser has been able to disarm the alarm
             if (getCurrentAlarmState() != "DISARMED"):
                 notification = getLatestNotification(nodeId)

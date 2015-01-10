@@ -8,7 +8,8 @@ from ConfUtils import getConfValue,getMailto,getSirens,getPanicMailto
 from LoggerUtils import setupSecurityLogger
 from RobotUtils import sendEmail
 from NotificationHandler import getNodeReport
-from Utils import getNowStr,convert_timedelta_str
+from Utils import getNowStr,convert_timedelta_str,secondsLeftFromString
+from UserSpecific import beep,longbeep
 from setBoolValue import setBoolValue
 from time import sleep
 import threading
@@ -216,6 +217,7 @@ def setAlarmState(alarmState):
             setLastStateChangeTime()
             subject = "Alarm state is: " + alarmState + " at " + getNowStr()
             body = "Previous state was " + currentAlarmState + "."
+            longbeep()
             sendEmail(mailto, subject, body)
         else:
             if alarmState != 'RELAXED':
@@ -237,10 +239,13 @@ def setDelayedAlarmState (alarmState, delay, desiredStateAlreadySet = False):
     currentAlarmState = getCurrentAlarmState()
     timeDelta = getLastStateChangeTimeDelta()
     if alarmState != currentAlarmState:
-        while delay:
-            logger.info("Setting state: " + alarmState + " after " + str(delay) + " seconds.")
+        desiredAlarmStateDelay = getDesiredAlarmStateDelay() 
+        while True: 
+            secondsLeft = secondsLeftFromString(desiredAlarmStateDelay)
+            if secondsLeft < 0:
+                break
+            logger.info("Setting state: " + alarmState + " after " + str(secondsLeft) + " seconds.")
             sleep(1)
-            delay -= 1
         currentDesiredAlarmState = getDesiredAlarmState()
         if (currentDesiredAlarmState != alarmState):
             logger.info("Not setting State!!. The current desired state is: " + currentDesiredAlarmState + " and we were waiting to set it to " + alarmState)
