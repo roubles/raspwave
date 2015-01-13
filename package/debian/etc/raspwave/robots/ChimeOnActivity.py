@@ -4,6 +4,9 @@
 import sys
 from UserSpecific import beep
 from ConfUtils import isDoorWindowOrMotion
+from LoggerUtils import setupRobotLogger 
+         
+logger = setupRobotLogger()
 
 def ChimeOnActivity():
     beep()

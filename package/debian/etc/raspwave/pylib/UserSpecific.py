@@ -1,16 +1,30 @@
 #!/usr/bin/env python
 # @author rouble matta
 import os
+from LoggerUtils import setupNotificationHandlerLogger
+from Utils import get_absolute_path
+from NotificationHandler import usrHomeScriptsFolder
+
+logger = setupNotificationHandlerLogger()
+
+beepFile = os.path.join(usrHomeScriptsFolder, 'beep.sh')
+longBeepFile = os.path.join(usrHomeScriptsFolder, 'longbeep.sh')
 
 def beep ():
-    os.popen('/usr/bin/ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@192.168.1.4  "/bin/echo 2 > /dev/ttyS1"')
+    if os.path.isfile(beepFile):
+        os.popen(beepFile)
+    print "BEEP!"
+    logger.info("BEEP!")
 
 def beepbeep ():
     beep()
     beep()
 
 def longbeep ():
-    os.popen('/usr/bin/ssh -o UserKnownHostsFile=/dev/null -o StrictHostKeyChecking=no root@192.168.1.4  "/bin/echo 3 > /dev/ttyS1"')
+    if os.path.isfile(longBeepFile):
+        os.popen(longBeepFile)
+    print "LONGBEEP!"
+    logger.info("LONGBEEP!")
 
 def longbeepbeep ():
     longbeep()

@@ -5,7 +5,6 @@ import ConfigParser
 import datetime
 from CacheUtils import readStringValue, writeStringValue
 from ConfUtils import getConfValue,getMailto,getSirens,getPanicMailto
-from LoggerUtils import setupSecurityLogger
 from RobotUtils import sendEmail
 from NotificationHandler import getNodeReport
 from Utils import getNowStr,convert_timedelta_str,secondsLeftFromString
@@ -14,6 +13,9 @@ from setBoolValue import setBoolValue
 from time import sleep
 import threading
 import hashlib
+from LoggerUtils import setupSecurityLogger
+
+logger = setupSecurityLogger()
 
 alarmStateKey = "ALARM_STATE"
 alarmDesiredStateKey = "ALARM_DESIRED_STATE"
@@ -21,11 +23,13 @@ alarmDesiredStateDelay = "ALARM_DESIRED_STATE_DELAY"
 alarmPreviousStateKey = "ALARM_PREVIOUS_STATE"
 alarmCodeKey  = "ALARM_CODE"
 alarmPanicKey  = "ALARM_PANIC"
+statePersistentKey = "STATE_PERSISTENT"
 lastPanicTimeKey  = "LAST_PANIC_TIME"
 lastAlertTimeKey  = "LAST_ALERT_TIME"
+alertPanicTimeKey  = "ALERT_PANIC_TIME"
+guiUpdateTimeKey  = "GUI_UPDATE_TIME"
 lastStateChangeTimeKey = "LAST_STATECHANGE_TIME"
 ignoreRePanicWithinSeconds = 30
-logger = setupSecurityLogger()
 
 mailto = getMailto()
 panicMailto = getPanicMailto()
@@ -40,11 +44,20 @@ def getLastPanicTime():
 def getLastAlertTime():
     return getLastTime(lastAlertTimeKey)
 
+def getGuiUpdateTime():
+    return getLastTime(guiUpdateTimeKey)
+
+def getAlertPanicTime():
+    return getLastTime(alertPanicTimeKey)
+
 def getLastStateChangeTime():
     return getLastTime(lastStateChangeTimeKey)
 
 def getLastPanicTimeDelta():
     return getLastTimeDelta(lastPanicTimeKey)
+
+def getAlertPanicTimeDelta():
+    return getLastTimeDelta(alertPanicTimeKey)
 
 def getLastAlertTimeDelta():
     return getLastTimeDelta(lastAlertTimeKey)
@@ -55,8 +68,19 @@ def getLastStateChangeTimeDelta():
 def setLastPanicTime():
     setLastTime(lastPanicTimeKey)
 
+def setGuiUpdateTime():
+    setLastTime(guiUpdateTimeKey)
+
 def setLastAlertTime():
     setLastTime(lastAlertTimeKey)
+
+def setAlertPanicTime(alertPanicTime):
+    writeStringValue(alertPanicTimeKey,alertPanicTime)
+    setGuiUpdateTime() # GUI needs to be updated to reflect that alarm will fire.
+
+def resetAlertPanicTime():
+    writeStringValue(alertPanicTimeKey,str(datetime.datetime(1970,1,1)))
+    setGuiUpdateTime() # GUI needs to be updated to reflect that alarm will fire.
 
 def setLastStateChangeTime():
     setLastTime(lastStateChangeTimeKey)
@@ -89,7 +113,7 @@ def panic (nodeId = None, info = None, siren = True):
             logger.info("Last panic was " + convert_timedelta_str(timeDelta) + " ago. Ignoring.")
             return
         setLastPanicTime()
-        writeStringValue(alarmPanicKey, "TRUE")
+        setPanic(True)
         # for now, just send an email.
         subject = "Alarm! Alarm! Alarm!"
         body = "Siren sounded at: " + getNowStr() + ".\n"
@@ -120,9 +144,8 @@ def unpanic (nodeId = None, info = None):
     with panicLock:
         logger.info("unPanic called.")
         if isPanic():
-            writeStringValue(alarmPanicKey, "FALSE")
-            # for now, just send an email.
-            subject = "Alarm silenced!"
+            setPanic(False)
+            subject = "Unpanic! Alarm silenced!"
             body = "Alarm silenced at: " + str(datetime.datetime.now()) + ".\n"
             if info is not None:
                 body += info
@@ -136,9 +159,31 @@ def unpanic (nodeId = None, info = None):
         else:
             logger.info("Not panicing. Nothing to do.")
 
+def setPanic (panic):
+    if panic:
+        writeStringValue(alarmPanicKey, "TRUE")
+    else:
+        writeStringValue(alarmPanicKey, "FALSE")
+    setGuiUpdateTime()
+
 def isPanic():
     try:
         if readStringValue(alarmPanicKey) == "TRUE":
+            return True
+    except KeyError:
+        pass
+    return False
+
+def setPersistent (persistent):
+    if persistent:
+        writeStringValue(statePersistentKey, "TRUE")
+    else:
+        writeStringValue(statePersistentKey, "FALSE")
+    setGuiUpdateTime()
+
+def isPersistent():
+    try:
+        if readStringValue(statePersistentKey) == "TRUE":
             return True
     except KeyError:
         pass
@@ -155,6 +200,7 @@ def getPreviousAlarmState ():
 
 def setDesiredAlarmState (state):
     writeStringValue(alarmDesiredStateKey, state)
+    setGuiUpdateTime()
 
 def getDesiredAlarmState ():
     try:
@@ -164,6 +210,7 @@ def getDesiredAlarmState ():
 
 def setDesiredAlarmStateDelay (date):
     writeStringValue(alarmDesiredStateDelay, date)
+    setGuiUpdateTime()
 
 def getDesiredAlarmStateDelay ():
     try:
@@ -176,7 +223,7 @@ def getDesiredAlarmStateDelayAsTime ():
     try:
         return datetime.datetime.strptime(desiredAlarmStateDelay, "%Y-%m-%d %H:%M:%S.%f")
     except:
-        return date.datetime(1970,1,1)
+        return datetime.datetime(1970,1,1)
 
 def getCurrentAlarmState ():
     try:
@@ -215,6 +262,7 @@ def setAlarmState(alarmState):
             setPreviousAlarmState(currentAlarmState)
             writeStringValue(alarmStateKey, alarmState)
             setLastStateChangeTime()
+            setGuiUpdateTime()
             subject = "Alarm state is: " + alarmState + " at " + getNowStr()
             body = "Previous state was " + currentAlarmState + "."
             longbeep()

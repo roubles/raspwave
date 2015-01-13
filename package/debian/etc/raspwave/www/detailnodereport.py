@@ -8,6 +8,7 @@ from LoggerUtils import setupSecurityLogger
 from NotificationHandler import getNodeReport
 from ConfUtils import getNodes
 import cgi, cgitb
+from controlpanel import getBaseUrl
 cgitb.enable()
 
 logger = setupSecurityLogger()
@@ -35,6 +36,6 @@ print '  </head>'
 print '  <body>'
 print '  <h1> Detail Node Report </h1>'
 print '  <pre>' + report + '</pre>'
-print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/controlpanel.py\'" style="font: bold 60px Arial">Back to Control Panel</button><br><br>'
+print '      <button onClick="window.location=\'' + getBaseUrl() + '/raspwave/controlpanel.py\'" style="font: bold 60px Arial">Back to Control Panel</button><br><br>'
 print '  </body>'
 print '</html>'

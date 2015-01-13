@@ -2,10 +2,10 @@
 
 import datetime
 from NotificationHandler import getEarliestNotificationOfCurrentState,getNodeReport
-from LoggerUtils import setupCronbotLogger
 from ConfUtils import getNodeName,getNodes,getMailto,isDoorWindowOrMotion
 from Utils import convert_timedelta_str
 from RobotUtils import sendEmail
+from LoggerUtils import setupCronbotLogger
 
 logger = setupCronbotLogger()
 

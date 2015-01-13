@@ -4,6 +4,7 @@
 import os
 import sys
 import shelve
+import signal
 import datetime
 import socket
 import time
@@ -16,21 +17,31 @@ from LoggerUtils import setupNotificationHandlerLogger, getNotificationHandlerLo
 from Notification import Notification, ValueNotification, BatteryValueNotification, NodeEventNotification, ValueChangeNotification, WakeupNotification
 from Utils import get_absolute_path
 from EnvUtils import isTestEnvironment
-from ConfUtils import getNodeName,isSiren,isMotion,isDoorWindow
+from ConfUtils import getNodeName,isSiren,isMotion,isDoorWindow,getUserId,setLocalIp
 from SensorUtils import getSensorState
 from SirenUtils import getSirenState
+from CacheUtils import CacheListener
 
-logger = None
+logger = setupNotificationHandlerLogger()
 
-usrHomeFolder = '~/.raspwave/robots'
+ListenerPort = 55555
+
+userid = getUserId()
+if userid == None:
+    usrHomeFolder = get_absolute_path('~/.raspwave')
+else:
+    usrHomeFolder = os.path.join('/home', userid, '.raspwave')
+usrHomeRobotsFolder = os.path.join(usrHomeFolder, 'robots')
+usrHomeScriptsFolder = os.path.join(usrHomeFolder, 'scripts')
+
 if isTestEnvironment():
-    raspscptLocation = '~/raspwave/sh/raspscpt'
-    etcFolder = '~/raspwave/robots'
-    shelfLocation = '~/raspwave/db/nh.shelf'
+    raspscptLocation = get_absolute_path('~/raspwave/sh/raspscpt')
+    etcRobotsFolder = get_absolute_path('~/raspwave/robots')
+    nhShelfLocation = get_absolute_path('~/raspwave/db/nh.shelf')
 else:
     raspscptLocation = '/usr/local/bin/raspscpt'
-    etcFolder = '/etc/raspwave/robots'
-    shelfLocation = '/etc/raspwave/db/nh.shelf'
+    etcRobotsFolder = '/etc/raspwave/robots'
+    nhShelfLocation = '/etc/raspwave/db/nh.shelf'
 
 class NodeControlBlock:
     def __init__(self, nid):
@@ -64,20 +75,20 @@ class RobotLauncher(threading.Thread):
         self.previous = previous
     def launchRobots(self, folder, current, previous):
         logger.info("Launching all robots in folder: " + folder)
-        folder = get_absolute_path(folder)
+        folder = folder
         if os.path.isdir(folder):
             for filename in os.listdir(folder):
                 if filename.endswith(".py"):
-                    raspscpt = get_absolute_path(raspscptLocation)
+                    raspscpt = raspscptLocation
                     cmd = raspscpt + " " + folder + '/' + filename + " " + self.type + " "+ current.nodeId + " " + current.nid + " " + (previous.nid if previous else "")
                     logger.info(cmd)
                     subprocess.Popen(cmd, shell=True)
         else:
             logger.info("Folder does not exist: " + folder)
     def launchEtcRobots(self, current, previous):
-        self.launchRobots(etcFolder, current, previous)
+        self.launchRobots(etcRobotsFolder, current, previous)
     def launchUsrHomeRobots(self, current, previous):
-        self.launchRobots(usrHomeFolder, current, previous)
+        self.launchRobots(usrHomeRobotsFolder, current, previous)
     def launchAllRobots(self, current, previous):
         self.launchEtcRobots(current, previous)
         self.launchUsrHomeRobots(current, previous)
@@ -164,8 +175,8 @@ class NotificationListener(threading.Thread):
             logger.info( 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
             print( 'Bind failed. Error Code : ' + str(msg[0]) + ' Message ' + msg[1])
             return
-        print( 'Socket bind complete')
-        logger.info( 'Socket bind complete')
+        print( 'Socket bind for notification handler complete')
+        logger.info( 'Socket bind for notification handler complete')
 
         #Start listening on socket
         self.s.listen(10)
@@ -191,7 +202,7 @@ class NotificationListener(threading.Thread):
         #Interrupt thread.
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(('localhost', 55555))
+            s.connect(('localhost', self.PORT))
             msg = "interrupt"
             s.send(msg)
             s.close()
@@ -208,11 +219,12 @@ class NotificationListener(threading.Thread):
 class NotificationHandler:
     def __init__ (self):
         self.lock = threading.RLock() 
-        self.PORT = 55555
+        self.PORT = ListenerPort
         self.ignoreSeconds = 5
         self.maxNotifcationsPerNode = 20
-        self.shelf = shelve.open(get_absolute_path(shelfLocation))
+        self.shelf = shelve.open(nhShelfLocation)
         self.mainNotificationListenerThread = None
+        self.cacheListenerThread = None
         self.robotLaunchers = []
     def dump(self):
         report = ""
@@ -435,20 +447,31 @@ class NotificationHandler:
         self.mainNotificationListenerThread = NotificationListener(self, self.PORT)
         self.mainNotificationListenerThread.daemon = True
         self.mainNotificationListenerThread.start()
+
+        self.cacheListenerThread = CacheListener()
+        self.cacheListenerThread.daemon = True
+        self.cacheListenerThread.start()
+
     def stop(self):
         logger.info("Stopping NotificationHandler")
         self.shelf.close()
         self.waitForRobotLaunchers()
-        self.mainNotificationListenerThread.stop()
-        self.mainNotificationListenerThread.waitForChildren()
-        self.mainNotificationListenerThread.join()
+
+        if self.mainNotificationListenerThread is not None:
+            self.mainNotificationListenerThread.stop()
+            self.mainNotificationListenerThread.waitForChildren()
+            self.mainNotificationListenerThread.join()
+
+        if self.cacheListenerThread is not None:
+            self.cacheListenerThread.stop()
+            self.cacheListenerThread.join()
         logger.info("NotificationHandler dead.")
 
 def getNotificationFromNodeByIndex(nodeId, index, queue = 'control', logger=getNotificationHandlerLogger()):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 55555))
+        s.connect(('localhost', ListenerPort))
         msg = "getNotificationFromNodeByIndex," + str(nodeId) + "," + str(index) + "," + str(queue)
         logger.info("sending msg: " + msg)
         s.send(msg)
@@ -461,7 +484,7 @@ def getNotificationFromNodeById(nodeId, id, queue = 'control', logger=getNotific
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 55555))
+        s.connect(('localhost', ListenerPort))
         msg = "getNotificationFromNodeById," + str(nodeId) + "," + id + "," + queue
         logger.info("sending msg: " + msg)
         s.send(msg)
@@ -474,7 +497,7 @@ def getLatestNotification(nodeId, queue = 'control', logger=getNotificationHandl
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 55555))
+        s.connect(('localhost', ListenerPort))
         msg = "getNotificationFromNodeByIndex," + str(nodeId) + ",0," + queue
         logger.info("sending msg: " + msg)
         s.send(msg)
@@ -487,7 +510,7 @@ def getEarliestNotificationOfCurrentState(nodeId, queue = 'control', logger=getN
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 55555))
+        s.connect(('localhost', ListenerPort))
         msg = "getEarliestNotificationOfCurrentState," + str(nodeId) + "," + queue
         logger.info("sending msg: " + msg)
         s.send(msg)
@@ -500,7 +523,7 @@ def getNodeReport(nodeId, logger=getNotificationHandlerLogger()):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 55555))
+        s.connect(('localhost', ListenerPort))
         msg = "getNodeReport," + str(nodeId)
         logger.info("sending msg: " + msg)
         s.send(msg)
@@ -513,7 +536,7 @@ def getNCB(nodeId, logger=getNotificationHandlerLogger()):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 55555))
+        s.connect(('localhost', ListenerPort))
         msg = "getNCB," + str(nodeId)
         logger.info("sending msg: " + msg)
         s.send(msg)
@@ -527,7 +550,7 @@ def sendMsg (*args):
     s = None
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        s.connect(('localhost', 55555))
+        s.connect(('localhost', ListenerPort))
         msg = ",".join(args)
         logger.info("Sending msg: " + msg)
         s.send(msg)
@@ -536,19 +559,35 @@ def sendMsg (*args):
     finally:
         s.close()
 
+def quit_gracefully(signal, frame):
+    print('Caught signal: ' + str(signal))
+    logger.info('Caught signal: ' + str(signal))
+    if nh:
+        nh.stop()
+    sys.exit(0)
+
+nh = None
 def main():
     global logger
-    nh = None
+    global nh
+
+    signal.signal(signal.SIGINT, quit_gracefully)
+    signal.signal(signal.SIGTERM, quit_gracefully)
+    signal.signal(signal.SIGQUIT, quit_gracefully)
+
     try:
-        logger = setupNotificationHandlerLogger()
         print("Starting NotificationHandler on this beautiful day " + str(datetime.datetime.now()))
         logger.info("Starting NotificationHandler on this beautiful day " + str(datetime.datetime.now()))
         nh = NotificationHandler()
         nh.start()
+        sleep(2)
+        # Some init stuff
+        setLocalIp()
         while True: 
             sleep(1)
     except KeyboardInterrupt as e:
-        logger.info( "Keyboard interrupt:" + str(e))
+        print("Keyboard interrupt:" + str(e))
+        logger.info("Keyboard interrupt:" + str(e))
         if nh is not None:
             nh.stop()
     except Exception as e:

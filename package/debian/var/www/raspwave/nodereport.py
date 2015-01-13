@@ -8,6 +8,7 @@ from NotificationHandler import getNCB,NodeControlBlock,getEarliestNotificationO
 from ConfUtils import getNodes,getNodeName
 from Utils import getTimeElapsed_HHMMSS
 import cgi, cgitb
+from controlpanel import getBaseUrl
 cgitb.enable()
 
 logger = setupSecurityLogger()
@@ -29,6 +30,6 @@ for nodeId in getNodes():
         print '<h3>' + nodeName + ' has been ' + ncb.state + ' for ' + getTimeElapsed_HHMMSS(notification.time) + '</h3>' 
         print '<p> Current State: ' + ncb.state + ' since ' + str(notification.time) + '</p>' 
         print '<p> Battery Level: ' + str(ncb.batteryValue) + '</p>' 
-print '      <button onClick="window.location=\'http://irouble.synology.me:8443/raspwave/controlpanel.py\'" style="font: bold 60px Arial">Back to Control Panel</button><br><br>'
+print '      <button onClick="window.location=\'' + getBaseUrl() + '/raspwave/controlpanel.py\'" style="font: bold 60px Arial">Back to Control Panel</button><br><br>'
 print '  </body>'
 print '</html>'

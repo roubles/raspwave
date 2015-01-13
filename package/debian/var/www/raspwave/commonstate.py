@@ -5,9 +5,9 @@ import os
 import sys
 import datetime
 sys.path.append('/etc/raspwave/pylib')
-from LoggerUtils import setupSecurityLogger
 from SecurityUtils import setDesiredAlarmState,setDesiredAlarmStateDelay
 from ConfUtils import getExitDelay
+from LoggerUtils import setupSecurityLogger
 
 logger = setupSecurityLogger()
 

@@ -7,14 +7,14 @@ from SecurityUtils import getCurrentAlarmState,panic,setLastAlertTime,getLastAle
 from ConfUtils import getNodeName,getMailto,isDoorWindowOrMotion,getAlarmStateDelayForNode
 from Notification import *
 from NotificationHandler import getNotificationFromNodeById,getLatestNotification
-from LoggerUtils import setupRobotLogger
 from SensorUtils import getSensorState
-from SecurityUtils import getLastAlertTimeDelta,setLastAlertTime
+from SecurityUtils import getLastAlertTimeDelta,setLastAlertTime,setAlertPanicTime,resetAlertPanicTime
 from Utils import convert_timedelta_str,secondsLeft
 from UserSpecific import beep
 from setBoolValue import setBoolValue
 from time import sleep
 import threading
+from LoggerUtils import setupRobotLogger
 
 logger = setupRobotLogger()
 
@@ -67,6 +67,7 @@ def AlertIfArmed(nodeId, current, previous):
                 logger.info("No delay defined for alarm state: [" + alarmState + "]. Defaulting to 10 seconds.")
                 alarmStateDelay = 10
             then = datetime.datetime.now() + datetime.timedelta(seconds=alarmStateDelay)
+            setAlertPanicTime(str(then))
             logger.info("We are in the following armed state: [" + alarmState + "]. Siren will be enabled in " + str(alarmStateDelay) + " seconds")
             subject = "[" + alarmState + "] Sensor tripped on node " + name + " on " + str(current.time)
             body = "Siren will fire in " + str(alarmStateDelay) + " seconds at " + str(then)
@@ -79,6 +80,7 @@ def AlertIfArmed(nodeId, current, previous):
             else:
                 sendEmail(mailto, "Alarm disarmed in time!", "")
                 logger.info("Alarm disarmed in time!")
+            resetAlertPanicTime()
 
 def crux(*args):
     if not isDoorWindowOrMotion(args[2]):

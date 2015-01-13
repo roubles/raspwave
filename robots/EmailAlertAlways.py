@@ -7,9 +7,9 @@ from SecurityUtils import getCurrentAlarmState
 from ConfUtils import getNodeName,getMailto,isDoorWindowOrMotion
 from Notification import *
 from NotificationHandler import getNotificationFromNodeById,getNodeReport
-from LoggerUtils import setupRobotLogger
 from Utils import getTimeElapsed_HHMMSS
 from SensorUtils import getSensorState
+from LoggerUtils import setupRobotLogger
 
 logger = setupRobotLogger()
 mailto = getMailto()

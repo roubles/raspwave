@@ -15,13 +15,13 @@ NH_LOCKFILE=/var/run/raspwave_nh.pid
 RASPWAVE_LOCKFILE=/var/run/raspwave.pid
 
 killtree() {
-    local _pid=$1
-    local _sig=${2:--TERM}
-    kill -stop ${_pid} # needed to stop quickly forking parent from producing children between child killing and parent killing
+    local _sig=$1
+    local _pid=$2
     for _child in $(ps -o pid --no-headers --ppid ${_pid}); do
-        killtree ${_child} ${_sig}
+        killtree ${_sig} ${_child}
     done
-    kill -${_sig} ${_pid}
+    echo "/bin/kill -${_sig} ${_pid}"
+    sudo kill -${_sig} ${_pid}
 }
 
 case "${1}" in
@@ -50,13 +50,13 @@ case "${1}" in
         if [ -r $NH_LOCKFILE ]; then
             NH_PID=`cat $NH_LOCKFILE`
             echo "Stopping NH with PID=$NH_PID"
-            killtree $NH_PID 9
+            killtree 15 $NH_PID
             rm -rf $NH_LOCKFILE
         fi
         if [ -r $RASPWAVE_LOCKFILE ]; then
             RASPWAVE_PID=`cat $RASPWAVE_LOCKFILE`
             echo "Stopping raspwave with PID=$RASPWAVE_PID"
-            killtree $RASPWAVE_PID 9
+            killtree 15 $RASPWAVE_PID
             rm -rf $RASPWAVE_LOCKFILE
         fi
         break

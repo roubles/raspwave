@@ -4,17 +4,20 @@
 import sys
 import logging
 
+wwwLoggerName = "www"
 robotsLoggerName = "robots"
 cronbotsLoggerName = "cronbots"
 notificationHandlerLoggerName = "notificationHandler"
 securityLoggerName = "security"
 
+wwwLoggingFile = "/var/log/raspwave/www.log"
 securityLoggingFile = "/var/log/raspwave/security.log"
 robotsLoggingFile = "/var/log/raspwave/robots.log"
 cronbotsLoggingFile = "/var/log/raspwave/cronbots.log"
 notificationHandlerLoggingFile = "/var/log/raspwave/notification.log"
 allLoggingFile = "/var/log/raspwave/all.log"
 
+wwwLoggerSetup = False
 securityLoggerSetup = False
 robotsLoggerSetup = False
 cronbotsLoggerSetup = False
@@ -85,6 +88,9 @@ def getCronbotsLogger ():
 def getNotificationHandlerLogger ():
     return logging.getLogger(notificationHandlerLoggerName)
 
+def getWwwLogger ():
+    return logging.getLogger(wwwLoggerName)
+
 def getSecurityLogger ():
     return logging.getLogger(securityLoggerName)
 
@@ -123,3 +129,12 @@ def setupSecurityLogger ():
 
     securityLoggerSetup = True
     return setupLogger(getSecurityLogger(), securityLoggingFile, True, False, True)
+
+def setupWwwLogger ():
+    global wwwLoggerSetup
+
+    if wwwLoggerSetup:
+        return getWwwLogger()
+
+    wwwLoggerSetup = True
+    return setupLogger(getWwwLogger(), wwwLoggingFile, True, False, True)
